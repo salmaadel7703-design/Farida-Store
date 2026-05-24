@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLang, onSearch, onFilterClick }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
 
   const handleFilter = (cat) => {
     onFilterClick(cat)
@@ -13,14 +14,15 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
       <nav className="navbar">
         <div className="nav-inner">
           <button className="menu-btn" onClick={() => setDrawerOpen(true)}>☰</button>
-          <div className="nav-logo">
+          <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             {lang === 'ar' ? 'فريدة' : 'Farida'}
             <span>WOMEN'S WEAR</span>
           </div>
-          <div className="search-bar">
+          <div className="search-bar desktop-search">
             <input type="text" placeholder={lang === 'ar' ? 'ابحثي عن منتج...' : 'Search for a product...'} onChange={(e) => onSearch(e.target.value)} />
           </div>
           <div className="nav-actions">
+            <button className="search-icon-btn mobile-search" onClick={() => setShowSearch(!showSearch)}>🔍</button>
             <div className="lang-toggle">
               <button className={`lang-btn ${lang === 'ar' ? 'active' : ''}`} onClick={() => setLang('ar')}>عربي</button>
               <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
@@ -30,6 +32,11 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
             </div>
           </div>
         </div>
+        {showSearch && (
+          <div className="mobile-search-bar">
+            <input type="text" placeholder={lang === 'ar' ? 'ابحثي عن منتج...' : 'Search for a product...'} onChange={(e) => onSearch(e.target.value)} autoFocus />
+          </div>
+        )}
       </nav>
 
       {drawerOpen && (
