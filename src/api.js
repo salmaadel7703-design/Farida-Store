@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api'
+const BASE_URL = 'https://farida-backend-production.up.railway.app/api'
 
 // المنتجات
 export const getProducts = async () => {
