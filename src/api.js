@@ -69,6 +69,7 @@ export const login = async (data) => {
   })
   return res.json()
 }
+
 export const uploadImage = async (file) => {
   const formData = new FormData()
   formData.append('image', file)
