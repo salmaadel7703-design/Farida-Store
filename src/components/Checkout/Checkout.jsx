@@ -14,11 +14,15 @@ const governorates = [
   { name: 'طنطا', price: 45, days: '3-4' },
 ]
 
+const VODAFONE_NUMBER = '01025234076'
+
 function Checkout({ onClose, items }) {
   const [step, setStep] = useState(1)
   const [gov, setGov] = useState('')
   const [payMethod, setPayMethod] = useState('cod')
   const [form, setForm] = useState({ name: '', phone: '', address: '' })
+  const [vodafonePhone, setVodafonePhone] = useState('')
+  const [paidAmount, setPaidAmount] = useState('')
   const [orderDone, setOrderDone] = useState(false)
   const [trackCode, setTrackCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,6 +34,10 @@ function Checkout({ onClose, items }) {
   const total = subtotal + shipping
 
   const placeOrder = async () => {
+    if (payMethod === 'vodafone' && (!vodafonePhone || !paidAmount)) {
+      alert('من فضلك ادخلي رقم المحفظة والمبلغ المحول')
+      return
+    }
     setLoading(true)
     try {
       const order = await addOrder({
@@ -38,6 +46,8 @@ function Checkout({ onClose, items }) {
         address: form.address,
         governorate: gov,
         payMethod,
+        vodafonePhone: payMethod === 'vodafone' ? vodafonePhone : '',
+        paidAmount: payMethod === 'vodafone' ? Number(paidAmount) : 0,
         items: items.map(i => ({ name: i.name, price: i.price, qty: i.qty || 1, size: i.size || '' })),
         total,
         shipping,
@@ -109,6 +119,16 @@ function Checkout({ onClose, items }) {
                     🚚 عند الاستلام
                   </div>
                 </div>
+
+                {payMethod === 'vodafone' && (
+                  <div style={{background:'#1a1a1a', padding:'1rem', borderRadius:'8px', marginBottom:'1rem'}}>
+                    <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'8px'}}>حولي المبلغ على رقم:</div>
+                    <div style={{color:'white', fontSize:'20px', fontWeight:'700', letterSpacing:'2px', marginBottom:'12px'}}>{VODAFONE_NUMBER}</div>
+                    <input className="auth-input" placeholder="رقم محفظتك اللي حولتي منه" value={vodafonePhone} onChange={e => setVodafonePhone(e.target.value)} />
+                    <input className="auth-input" placeholder="المبلغ اللي حولتيه" type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
+                  </div>
+                )}
+
                 <div className="order-summary">
                   <div className="summary-row"><span>المنتجات</span><span>{subtotal} ج</span></div>
                   <div className="summary-row"><span>الشحن</span><span>{shipping} ج</span></div>
