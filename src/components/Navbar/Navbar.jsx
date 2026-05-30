@@ -4,6 +4,9 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
 
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const isAdmin = user?.role === 'admin'
+
   const handleFilter = (cat) => {
     onFilterClick(cat)
     setDrawerOpen(false)
@@ -73,10 +76,12 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
           <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'إنشاء حساب جديد' : 'Register'}</div>
           <div className="cat-item">{lang === 'ar' ? 'طلباتي' : 'My Orders'}</div>
         </div>
-        <div className="drawer-category">
-          <div className="cat-title">{lang === 'ar' ? 'الإدارة' : 'Admin'}</div>
-          <div className="cat-item" onClick={() => { onAdminClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
-        </div>
+        {isAdmin && (
+          <div className="drawer-category">
+            <div className="cat-title">{lang === 'ar' ? 'الإدارة' : 'Admin'}</div>
+            <div className="cat-item" onClick={() => { onAdminClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
+          </div>
+        )}
       </div>
     </>
   )

@@ -8,7 +8,7 @@ function Products({ onAddToCart, onProductClick, lang, search = '', filter = '' 
   useEffect(() => {
     getProducts()
       .then(data => {
-        setProducts(data)
+        setProducts(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch(() => setLoading(false))

@@ -12,8 +12,12 @@ function Admin({ onClose }) {
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    getProducts().then(data => { setProducts(data); setLoading(false) })
-    getOrders().then(data => setOrders(data))
+    getProducts()
+      .then(data => { setProducts(Array.isArray(data) ? data : []); setLoading(false) })
+      .catch(() => setLoading(false))
+    getOrders()
+      .then(data => setOrders(Array.isArray(data) ? data : []))
+      .catch(() => setOrders([]))
   }, [])
 
   const handleImageUpload = async (e, isEdit = false) => {
