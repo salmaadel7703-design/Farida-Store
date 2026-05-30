@@ -80,9 +80,15 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'حسابي' : 'My Account'}</div>
-          <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'تسجيل الدخول' : 'Login'}</div>
-          <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'إنشاء حساب جديد' : 'Register'}</div>
-          <div className="cat-item">{lang === 'ar' ? 'طلباتي' : 'My Orders'}</div>
+          {user ? (
+            <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>👤 {user.name}</div>
+          ) : (
+            <>
+              <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'تسجيل الدخول' : 'Login'}</div>
+              <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'إنشاء حساب جديد' : 'Register'}</div>
+            </>
+          )}
+          <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'طلباتي' : 'My Orders'}</div>
         </div>
         {isAdmin && (
           <div className="drawer-category">
