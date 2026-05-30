@@ -1,12 +1,26 @@
-import { useState } from 'react'
-import { login, register } from '../../api'
+import { useState, useEffect } from 'react'
+import { login, register, getOrders } from '../../api'
 
-function Auth({ onClose }) {
+function Auth({ onClose, cartItems }) {
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', phone: '', password: '' })
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'))
+  const [orders, setOrders] = useState([])
+  const [tab, setTab] = useState('orders')
+
+  useEffect(() => {
+    if (user) {
+      getOrders()
+        .then(data => {
+          const myOrders = Array.isArray(data) ? data.filter(o => o.phone === user.phone) : []
+          setOrders(myOrders)
+        })
+        .catch(() => setOrders([]))
+    }
+  }, [user])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -16,8 +30,7 @@ function Auth({ onClose }) {
       if (res.token) {
         localStorage.setItem('token', res.token)
         localStorage.setItem('user', JSON.stringify(res.user))
-        alert(`أهلاً ${res.user.name}! 🎉`)
-        onClose()
+        setUser(res.user)
       } else {
         setError(res.message || 'في مشكلة، حاولي تاني')
       }
@@ -35,8 +48,7 @@ function Auth({ onClose }) {
       if (res.token) {
         localStorage.setItem('token', res.token)
         localStorage.setItem('user', JSON.stringify(res.user))
-        alert(`تم إنشاء حسابك يا ${res.user.name}! 🎉`)
-        onClose()
+        setUser(res.user)
       } else {
         setError(res.message || 'في مشكلة، حاولي تاني')
       }
@@ -44,6 +56,13 @@ function Auth({ onClose }) {
       setError('في مشكلة، حاولي تاني')
     }
     setLoading(false)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setUser(null)
+    onClose()
   }
 
   return (
@@ -55,43 +74,108 @@ function Auth({ onClose }) {
           <button className="drawer-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="auth-tabs">
-          <button className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(true); setError('') }}>
-            تسجيل الدخول
-          </button>
-          <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(false); setError('') }}>
-            حساب جديد
-          </button>
-        </div>
-
-        {error && <div style={{color:'#ff6b6b', fontSize:'13px', marginBottom:'1rem', textAlign:'center'}}>{error}</div>}
-
-        {isLogin ? (
-          <div className="auth-form">
-            <input className="auth-input" type="email" placeholder="البريد الإلكتروني" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} />
-            <input className="auth-input" type="password" placeholder="كلمة المرور" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
-            <button className="auth-btn" onClick={handleLogin} disabled={loading}>
-              {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
-            </button>
-            <div className="auth-switch">
-              مش عندك حساب؟
-              <span onClick={() => setIsLogin(false)}> إنشاء حساب جديد</span>
+        {user ? (
+          <>
+            <div style={{textAlign:'center', padding:'1rem', color:'var(--gold)', fontSize:'18px'}}>
+              أهلاً {user.name}! 👋
             </div>
-          </div>
+            <div className="admin-tabs">
+              <button className={`auth-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>طلباتي</button>
+              <button className={`auth-tab ${tab === 'cart' ? 'active' : ''}`} onClick={() => setTab('cart')}>سلتي</button>
+            </div>
+
+            {tab === 'orders' && (
+              <div className="admin-products">
+                {orders.length === 0 ? (
+                  <div className="admin-empty">
+                    <div style={{fontSize:'48px', marginBottom:'1rem'}}>📦</div>
+                    <p>مفيش طلبات لسه</p>
+                  </div>
+                ) : (
+                  orders.map(o => (
+                    <div className="admin-product-row" key={o._id}>
+                      <div className="admin-product-info">
+                        <div className="admin-product-name">{o.governorate} · {o.total} ج</div>
+                        <div className="admin-product-meta">
+                          {o.payMethod === 'cod' ? '🚚 عند الاستلام' : '📱 فودافون كاش'}
+                        </div>
+                        <div className="admin-product-meta" style={{color:'var(--gold)'}}>
+                          كود التتبع: {o.trackCode}
+                        </div>
+                        <div className="admin-product-meta">{o.status}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {tab === 'cart' && (
+              <div className="admin-products">
+                {!cartItems || cartItems.length === 0 ? (
+                  <div className="admin-empty">
+                    <div style={{fontSize:'48px', marginBottom:'1rem'}}>🛍</div>
+                    <p>السلة فاضية</p>
+                  </div>
+                ) : (
+                  cartItems.map((item, i) => (
+                    <div className="admin-product-row" key={i}>
+                      <div className="admin-product-info" style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                        {item.image && <img src={item.image} alt={item.name} style={{width:'50px', height:'50px', objectFit:'cover', borderRadius:'4px'}} />}
+                        <div>
+                          <div className="admin-product-name">{item.name}</div>
+                          <div className="admin-product-meta">{item.price} ج</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            <button className="checkout-back" style={{margin:'1rem'}} onClick={handleLogout}>تسجيل الخروج</button>
+          </>
         ) : (
-          <div className="auth-form">
-            <input className="auth-input" type="text" placeholder="الاسم الكامل" value={registerForm.name} onChange={e => setRegisterForm({...registerForm, name: e.target.value})} />
-            <input className="auth-input" type="email" placeholder="البريد الإلكتروني" value={registerForm.email} onChange={e => setRegisterForm({...registerForm, email: e.target.value})} />
-            <input className="auth-input" type="tel" placeholder="رقم الموبايل" value={registerForm.phone} onChange={e => setRegisterForm({...registerForm, phone: e.target.value})} />
-            <input className="auth-input" type="password" placeholder="كلمة المرور" value={registerForm.password} onChange={e => setRegisterForm({...registerForm, password: e.target.value})} />
-            <button className="auth-btn" onClick={handleRegister} disabled={loading}>
-              {loading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
-            </button>
-            <div className="auth-switch">
-              عندك حساب؟
-              <span onClick={() => setIsLogin(true)}> تسجيل الدخول</span>
+          <>
+            <div className="auth-tabs">
+              <button className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(true); setError('') }}>
+                تسجيل الدخول
+              </button>
+              <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(false); setError('') }}>
+                حساب جديد
+              </button>
             </div>
-          </div>
+
+            {error && <div style={{color:'#ff6b6b', fontSize:'13px', marginBottom:'1rem', textAlign:'center'}}>{error}</div>}
+
+            {isLogin ? (
+              <div className="auth-form">
+                <input className="auth-input" type="email" placeholder="البريد الإلكتروني" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} />
+                <input className="auth-input" type="password" placeholder="كلمة المرور" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
+                <button className="auth-btn" onClick={handleLogin} disabled={loading}>
+                  {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
+                </button>
+                <div className="auth-switch">
+                  مش عندك حساب؟
+                  <span onClick={() => setIsLogin(false)}> إنشاء حساب جديد</span>
+                </div>
+              </div>
+            ) : (
+              <div className="auth-form">
+                <input className="auth-input" type="text" placeholder="الاسم الكامل" value={registerForm.name} onChange={e => setRegisterForm({...registerForm, name: e.target.value})} />
+                <input className="auth-input" type="email" placeholder="البريد الإلكتروني" value={registerForm.email} onChange={e => setRegisterForm({...registerForm, email: e.target.value})} />
+                <input className="auth-input" type="tel" placeholder="رقم الموبايل" value={registerForm.phone} onChange={e => setRegisterForm({...registerForm, phone: e.target.value})} />
+                <input className="auth-input" type="password" placeholder="كلمة المرور" value={registerForm.password} onChange={e => setRegisterForm({...registerForm, password: e.target.value})} />
+                <button className="auth-btn" onClick={handleRegister} disabled={loading}>
+                  {loading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
+                </button>
+                <div className="auth-switch">
+                  عندك حساب؟
+                  <span onClick={() => setIsLogin(true)}> تسجيل الدخول</span>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

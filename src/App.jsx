@@ -88,7 +88,7 @@ function App() {
             }}
             lang={lang}
           />
-          {authOpen && <Auth onClose={() => setAuthOpen(false)} lang={lang} />}
+          {authOpen && <Auth onClose={() => setAuthOpen(false)} lang={lang} cartItems={cartItems} />}
           {selectedProduct && (
             <ProductPage
               product={selectedProduct}
