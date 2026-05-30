@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage } from '../../api'
 
+const defaultGovernorates = [
+  { name: 'القاهرة', price: 35, days: '2-3' },
+  { name: 'الجيزة', price: 35, days: '2-3' },
+  { name: 'الإسكندرية', price: 45, days: '3-4' },
+  { name: 'المنصورة', price: 50, days: '3-5' },
+  { name: 'أسيوط', price: 60, days: '4-6' },
+  { name: 'سوهاج', price: 60, days: '4-6' },
+  { name: 'الأقصر', price: 65, days: '5-7' },
+  { name: 'أسوان', price: 65, days: '5-7' },
+  { name: 'الفيوم', price: 50, days: '3-5' },
+  { name: 'طنطا', price: 45, days: '3-4' },
+]
+
 function Admin({ onClose }) {
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
@@ -10,6 +23,11 @@ function Admin({ onClose }) {
   const [showAdd, setShowAdd] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [governorates, setGovernorates] = useState(() => {
+    const saved = localStorage.getItem('governorates')
+    return saved ? JSON.parse(saved) : defaultGovernorates
+  })
+  const [editingGov, setEditingGov] = useState(null)
 
   useEffect(() => {
     getProducts()
@@ -56,6 +74,12 @@ function Admin({ onClose }) {
     setShowAdd(false)
   }
 
+  const saveGovernorates = (updated) => {
+    setGovernorates(updated)
+    localStorage.setItem('governorates', JSON.stringify(updated))
+    setEditingGov(null)
+  }
+
   return (
     <>
       <div className="overlay" onClick={onClose}></div>
@@ -68,6 +92,7 @@ function Admin({ onClose }) {
         <div className="admin-tabs">
           <button className={`auth-tab ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>المنتجات</button>
           <button className={`auth-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>الطلبات</button>
+          <button className={`auth-tab ${tab === 'shipping' ? 'active' : ''}`} onClick={() => setTab('shipping')}>الشحن</button>
         </div>
 
         {tab === 'products' && (
@@ -167,6 +192,11 @@ function Admin({ onClose }) {
                       <div className="admin-product-meta">
                         📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}
                       </div>
+                      {o.payMethod === 'vodafone' && (
+                        <div className="admin-product-meta" style={{color:'#ff6b6b'}}>
+                          محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج
+                        </div>
+                      )}
                       <div className="admin-product-meta" style={{color:'var(--gold)'}}>
                         كود: {o.trackCode} · {o.status}
                       </div>
@@ -175,6 +205,43 @@ function Admin({ onClose }) {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'shipping' && (
+          <div className="admin-products">
+            {governorates.map((g, i) => (
+              <div className="admin-product-row" key={g.name}>
+                {editingGov === i ? (
+                  <div className="admin-form" style={{width:'100%'}}>
+                    <div className="admin-row">
+                      <input className="auth-input" placeholder="السعر" type="number" value={g.price} onChange={e => {
+                        const updated = [...governorates]
+                        updated[i] = {...updated[i], price: Number(e.target.value)}
+                        setGovernorates(updated)
+                      }} />
+                      <input className="auth-input" placeholder="الأيام (مثلاً: 2-3)" value={g.days} onChange={e => {
+                        const updated = [...governorates]
+                        updated[i] = {...updated[i], days: e.target.value}
+                        setGovernorates(updated)
+                      }} />
+                    </div>
+                    <div className="admin-row">
+                      <button className="auth-btn" style={{flex:1}} onClick={() => saveGovernorates(governorates)}>حفظ</button>
+                      <button className="checkout-back" style={{flex:1}} onClick={() => setEditingGov(null)}>إلغاء</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="admin-product-info">
+                      <div className="admin-product-name">{g.name}</div>
+                      <div className="admin-product-meta">{g.price} ج · {g.days} أيام</div>
+                    </div>
+                    <button className="admin-edit-btn" onClick={() => setEditingGov(i)}>تعديل</button>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
