@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage } from '../../api'
+import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer } from '../../api'
 
 const defaultGovernorates = [
   { name: 'القاهرة', price: 35, days: '2-3' },
@@ -17,9 +17,13 @@ const defaultGovernorates = [
 function Admin({ onClose }) {
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
+  const [slides, setSlides] = useState([])
+  const [offers, setOffers] = useState([])
   const [tab, setTab] = useState('products')
   const [editing, setEditing] = useState(null)
   const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '' })
+  const [newSlide, setNewSlide] = useState({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
+  const [newOffer, setNewOffer] = useState({ title: '', discount: '', sub: '', image: '' })
   const [showAdd, setShowAdd] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -36,17 +40,26 @@ function Admin({ onClose }) {
     getOrders()
       .then(data => setOrders(Array.isArray(data) ? data : []))
       .catch(() => setOrders([]))
+    getSlides()
+      .then(data => setSlides(Array.isArray(data) ? data : []))
+      .catch(() => setSlides([]))
+    getOffers()
+      .then(data => setOffers(Array.isArray(data) ? data : []))
+      .catch(() => setOffers([]))
   }, [])
 
-  const handleImageUpload = async (e, isEdit = false) => {
+  const handleImageUpload = async (e, target = 'product', isEdit = false) => {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
     const res = await uploadImage(file)
-    if (isEdit) {
-      setEditing({ ...editing, image: res.url })
-    } else {
-      setNewProduct({ ...newProduct, image: res.url })
+    if (target === 'product') {
+      if (isEdit) setEditing({ ...editing, image: res.url })
+      else setNewProduct({ ...newProduct, image: res.url })
+    } else if (target === 'slide') {
+      setNewSlide({ ...newSlide, image: res.url })
+    } else if (target === 'offer') {
+      setNewOffer({ ...newOffer, image: res.url })
     }
     setUploading(false)
   }
@@ -74,6 +87,28 @@ function Admin({ onClose }) {
     setShowAdd(false)
   }
 
+  const handleAddSlide = async () => {
+    const slide = await addSlide(newSlide)
+    setSlides([...slides, slide])
+    setNewSlide({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
+  }
+
+  const handleDeleteSlide = async (id) => {
+    await deleteSlide(id)
+    setSlides(slides.filter(s => s._id !== id))
+  }
+
+  const handleAddOffer = async () => {
+    const offer = await addOffer(newOffer)
+    setOffers([...offers, offer])
+    setNewOffer({ title: '', discount: '', sub: '', image: '' })
+  }
+
+  const handleDeleteOffer = async (id) => {
+    await deleteOffer(id)
+    setOffers(offers.filter(o => o._id !== id))
+  }
+
   const saveGovernorates = (updated) => {
     setGovernorates(updated)
     localStorage.setItem('governorates', JSON.stringify(updated))
@@ -89,16 +124,17 @@ function Admin({ onClose }) {
           <button className="drawer-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="admin-tabs">
+        <div className="admin-tabs" style={{flexWrap:'wrap'}}>
           <button className={`auth-tab ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>المنتجات</button>
           <button className={`auth-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>الطلبات</button>
+          <button className={`auth-tab ${tab === 'slides' ? 'active' : ''}`} onClick={() => setTab('slides')}>السلايدر</button>
+          <button className={`auth-tab ${tab === 'offers' ? 'active' : ''}`} onClick={() => setTab('offers')}>العروض</button>
           <button className={`auth-tab ${tab === 'shipping' ? 'active' : ''}`} onClick={() => setTab('shipping')}>الشحن</button>
         </div>
 
         {tab === 'products' && (
           <div>
             <button className="admin-add-btn" onClick={() => setShowAdd(!showAdd)}>+ إضافة منتج جديد</button>
-
             {showAdd && (
               <div className="admin-form">
                 <div className="admin-row">
@@ -122,13 +158,12 @@ function Admin({ onClose }) {
                   </select>
                 </div>
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صورة المنتج</div>
-                <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e)} />
+                <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product')} />
                 {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                 {newProduct.image && <img src={newProduct.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
                 <button className="auth-btn" onClick={handleAdd} disabled={uploading}>إضافة المنتج</button>
               </div>
             )}
-
             {loading ? (
               <div className="admin-empty">جاري التحميل...</div>
             ) : (
@@ -146,7 +181,7 @@ function Admin({ onClose }) {
                           <input className="auth-input" placeholder="الكمية" value={editing.stock} onChange={e => setEditing({...editing, stock: Number(e.target.value)})} />
                         </div>
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة</div>
-                        <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, true)} />
+                        <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true)} />
                         {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                         {editing.image && <img src={editing.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
                         <div className="admin-row">
@@ -189,22 +224,74 @@ function Admin({ onClose }) {
                   <div className="admin-product-row" key={o._id}>
                     <div className="admin-product-info">
                       <div className="admin-product-name">{o.name} — {o.governorate}</div>
-                      <div className="admin-product-meta">
-                        📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}
-                      </div>
+                      <div className="admin-product-meta">📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}</div>
                       {o.payMethod === 'vodafone' && (
-                        <div className="admin-product-meta" style={{color:'#ff6b6b'}}>
-                          محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج
-                        </div>
+                        <div className="admin-product-meta" style={{color:'#ff6b6b'}}>محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج</div>
                       )}
-                      <div className="admin-product-meta" style={{color:'var(--gold)'}}>
-                        كود: {o.trackCode} · {o.status}
-                      </div>
+                      <div className="admin-product-meta" style={{color:'var(--gold)'}}>كود: {o.trackCode} · {o.status}</div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'slides' && (
+          <div>
+            <div className="admin-form">
+              <input className="auth-input" placeholder="التاق (مثلاً: ✦ كولكشن جديد ✦)" value={newSlide.tag} onChange={e => setNewSlide({...newSlide, tag: e.target.value})} />
+              <div className="admin-row">
+                <input className="auth-input" placeholder="العنوان" value={newSlide.title} onChange={e => setNewSlide({...newSlide, title: e.target.value})} />
+                <input className="auth-input" placeholder="العنوان الذهبي" value={newSlide.titleGold} onChange={e => setNewSlide({...newSlide, titleGold: e.target.value})} />
+              </div>
+              <input className="auth-input" placeholder="الوصف" value={newSlide.sub} onChange={e => setNewSlide({...newSlide, sub: e.target.value})} />
+              <input className="auth-input" placeholder="نص الزرار" value={newSlide.btn} onChange={e => setNewSlide({...newSlide, btn: e.target.value})} />
+              <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صورة الخلفية</div>
+              <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'slide')} />
+              {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
+              {newSlide.image && <img src={newSlide.image} alt="preview" style={{width:'100px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />}
+              <button className="auth-btn" onClick={handleAddSlide} disabled={uploading}>إضافة سلايد</button>
+            </div>
+            <div className="admin-products">
+              {slides.map(s => (
+                <div className="admin-product-row" key={s._id}>
+                  <div className="admin-product-info">
+                    {s.image && <img src={s.image} alt={s.title} style={{width:'60px', height:'40px', objectFit:'cover', borderRadius:'4px', marginBottom:'4px'}} />}
+                    <div className="admin-product-name">{s.title} {s.titleGold}</div>
+                    <div className="admin-product-meta">{s.tag}</div>
+                  </div>
+                  <button className="admin-delete-btn" onClick={() => handleDeleteSlide(s._id)}>حذف</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'offers' && (
+          <div>
+            <div className="admin-form">
+              <input className="auth-input" placeholder="عنوان العرض" value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} />
+              <input className="auth-input" placeholder="نسبة الخصم (مثلاً: خصم 50%)" value={newOffer.discount} onChange={e => setNewOffer({...newOffer, discount: e.target.value})} />
+              <input className="auth-input" placeholder="الوصف" value={newOffer.sub} onChange={e => setNewOffer({...newOffer, sub: e.target.value})} />
+              <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صورة العرض</div>
+              <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'offer')} />
+              {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
+              {newOffer.image && <img src={newOffer.image} alt="preview" style={{width:'100px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />}
+              <button className="auth-btn" onClick={handleAddOffer} disabled={uploading}>إضافة عرض</button>
+            </div>
+            <div className="admin-products">
+              {offers.map(o => (
+                <div className="admin-product-row" key={o._id}>
+                  <div className="admin-product-info">
+                    {o.image && <img src={o.image} alt={o.title} style={{width:'60px', height:'40px', objectFit:'cover', borderRadius:'4px', marginBottom:'4px'}} />}
+                    <div className="admin-product-name">{o.title}</div>
+                    <div className="admin-product-meta">{o.discount}</div>
+                  </div>
+                  <button className="admin-delete-btn" onClick={() => handleDeleteOffer(o._id)}>حذف</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

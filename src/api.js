@@ -79,3 +79,65 @@ export const uploadImage = async (file) => {
   })
   return res.json()
 }
+
+// السلايدر
+export const getSlides = async () => {
+  const res = await fetch(`${BASE_URL}/slides`)
+  return res.json()
+}
+
+export const addSlide = async (slide) => {
+  const res = await fetch(`${BASE_URL}/slides`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(slide)
+  })
+  return res.json()
+}
+
+export const updateSlide = async (id, slide) => {
+  const res = await fetch(`${BASE_URL}/slides/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(slide)
+  })
+  return res.json()
+}
+
+export const deleteSlide = async (id) => {
+  const res = await fetch(`${BASE_URL}/slides/${id}`, {
+    method: 'DELETE'
+  })
+  return res.json()
+}
+
+// العروض
+export const getOffers = async () => {
+  const res = await fetch(`${BASE_URL}/offers`)
+  return res.json()
+}
+
+export const addOffer = async (offer) => {
+  const res = await fetch(`${BASE_URL}/offers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(offer)
+  })
+  return res.json()
+}
+
+export const updateOffer = async (id, offer) => {
+  const res = await fetch(`${BASE_URL}/offers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(offer)
+  })
+  return res.json()
+}
+
+export const deleteOffer = async (id) => {
+  const res = await fetch(`${BASE_URL}/offers/${id}`, {
+    method: 'DELETE'
+  })
+  return res.json()
+}
