@@ -12,6 +12,11 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
     setDrawerOpen(false)
   }
 
+  const goHome = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setDrawerOpen(false)
+  }
+
   return (
     <>
       <nav className="navbar">
@@ -50,6 +55,9 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, lang, setLa
         <div className="drawer-header">
           <span className="drawer-title">{lang === 'ar' ? 'المنتجات' : 'Products'}</span>
           <button className="drawer-close" onClick={() => setDrawerOpen(false)}>✕</button>
+        </div>
+        <div className="drawer-category">
+          <div className="cat-item" onClick={goHome}>🏠 {lang === 'ar' ? 'الصفحة الرئيسية' : 'Home'}</div>
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'بيجامات' : 'Pajamas'}</div>
