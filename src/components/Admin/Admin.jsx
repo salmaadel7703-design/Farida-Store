@@ -21,7 +21,7 @@ function Admin({ onClose }) {
   const [offers, setOffers] = useState([])
   const [tab, setTab] = useState('products')
   const [editing, setEditing] = useState(null)
-  const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '' })
+  const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
   const [newSlide, setNewSlide] = useState({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
   const [newOffer, setNewOffer] = useState({ title: '', discount: '', sub: '', image: '' })
   const [showAdd, setShowAdd] = useState(false)
@@ -48,14 +48,20 @@ function Admin({ onClose }) {
       .catch(() => setOffers([]))
   }, [])
 
-  const handleImageUpload = async (e, target = 'product', isEdit = false) => {
+  const handleImageUpload = async (e, target = 'product', isEdit = false, isExtra = false) => {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
     const res = await uploadImage(file)
     if (target === 'product') {
-      if (isEdit) setEditing({ ...editing, image: res.url })
-      else setNewProduct({ ...newProduct, image: res.url })
+      if (isExtra) {
+        // ✅ إضافة صورة إضافية
+        if (isEdit) setEditing({ ...editing, images: [...(editing.images || []), res.url] })
+        else setNewProduct({ ...newProduct, images: [...(newProduct.images || []), res.url] })
+      } else {
+        if (isEdit) setEditing({ ...editing, image: res.url })
+        else setNewProduct({ ...newProduct, image: res.url })
+      }
     } else if (target === 'slide') {
       setNewSlide({ ...newSlide, image: res.url })
     } else if (target === 'offer') {
@@ -83,7 +89,7 @@ function Admin({ onClose }) {
       stock: Number(newProduct.stock)
     })
     setProducts([...products, product])
-    setNewProduct({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '' })
+    setNewProduct({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
     setShowAdd(false)
   }
 
@@ -157,10 +163,22 @@ function Admin({ onClose }) {
                     <option>لانجيري</option>
                   </select>
                 </div>
-                <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صورة المنتج</div>
+                {/* ✅ الألوان والمقاسات */}
+                <input className="auth-input" placeholder="الألوان مفصولة بفاصلة (مثلاً: أحمر, أسود, بيج)" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
+                <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة (مثلاً: S, M, L) أو اتركيه فاضي للـ default" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
+                {/* ✅ الصورة الرئيسية */}
+                <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>الصورة الرئيسية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product')} />
-                {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                 {newProduct.image && <img src={newProduct.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
+                {/* ✅ صور إضافية */}
+                <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صور إضافية</div>
+                <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', false, true)} />
+                <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
+                  {newProduct.images?.map((img, i) => (
+                    <img key={i} src={img} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
+                  ))}
+                </div>
+                {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                 <button className="auth-btn" onClick={handleAdd} disabled={uploading}>إضافة المنتج</button>
               </div>
             )}
@@ -180,10 +198,23 @@ function Admin({ onClose }) {
                           <input className="auth-input" placeholder="السعر" value={editing.price} onChange={e => setEditing({...editing, price: Number(e.target.value)})} />
                           <input className="auth-input" placeholder="الكمية" value={editing.stock} onChange={e => setEditing({...editing, stock: Number(e.target.value)})} />
                         </div>
-                        <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة</div>
+                        {/* ✅ الألوان والمقاسات في التعديل */}
+                        <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={editing.colors || ''} onChange={e => setEditing({...editing, colors: e.target.value})} />
+                        <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={editing.sizes || ''} onChange={e => setEditing({...editing, sizes: e.target.value})} />
+                        <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة الرئيسية</div>
                         <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true)} />
-                        {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                         {editing.image && <img src={editing.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
+                        <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>إضافة صور إضافية</div>
+                        <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true, true)} />
+                        <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
+                          {editing.images?.map((img, i) => (
+                            <div key={i} style={{position:'relative'}}>
+                              <img src={img} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
+                              <button onClick={() => setEditing({...editing, images: editing.images.filter((_, j) => j !== i)})} style={{position:'absolute', top:'-6px', right:'-6px', background:'red', color:'white', border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'10px'}}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                        {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                         <div className="admin-row">
                           <button className="auth-btn" style={{flex:1}} onClick={handleSaveEdit}>حفظ</button>
                           <button className="checkout-back" style={{flex:1}} onClick={() => setEditing(null)}>إلغاء</button>
@@ -196,6 +227,8 @@ function Admin({ onClose }) {
                           <div>
                             <div className="admin-product-name">{p.name}</div>
                             <div className="admin-product-meta">{p.cat} · {p.price} ج · كمية: {p.stock}</div>
+                            {p.colors && <div className="admin-product-meta">🎨 {p.colors}</div>}
+                            {p.sizes && <div className="admin-product-meta">📐 {p.sizes}</div>}
                           </div>
                         </div>
                         <div className="admin-product-actions">
