@@ -24,6 +24,7 @@ function App() {
   const [lang, setLang] = useState('ar')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
+  const [toast, setToast] = useState('')  // ✅ إشعار السلة
 
   useEffect(() => {
     setTimeout(() => setShowSplash(false), 2500)
@@ -35,9 +36,11 @@ function App() {
 
   const addToCart = (product) => {
     setCartItems(prev => [...prev, product])
+    // ✅ إظهار الإشعار وإخفاؤه بعد 2 ثانية
+    setToast(`✅ تمت إضافة "${product.name}" للسلة`)
+    setTimeout(() => setToast(''), 2000)
   }
 
-  // ✅ مسح السلة بعد تأكيد الطلب
   const clearCart = () => {
     setCartItems([])
     setCheckoutOpen(false)
@@ -84,6 +87,28 @@ function App() {
             filter={filter}
           />
           <Footer lang={lang} />
+
+          {/* ✅ الإشعار */}
+          {toast && (
+            <div style={{
+              position: 'fixed',
+              bottom: '30px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: '#1a1a1a',
+              color: 'var(--gold)',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              border: '1px solid var(--gold)',
+              fontSize: '14px',
+              zIndex: 9999,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              whiteSpace: 'nowrap'
+            }}>
+              {toast}
+            </div>
+          )}
+
           <Cart
             open={cartOpen}
             onClose={() => setCartOpen(false)}
