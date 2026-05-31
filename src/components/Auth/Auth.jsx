@@ -15,7 +15,7 @@ function Auth({ onClose, cartItems }) {
     if (user) {
       getOrders()
         .then(data => {
-          const myOrders = Array.isArray(data) ? data.filter(o => o.phone === user.phone) : []
+          const myOrders = Array.isArray(data) ? data.filter(o => o.email === user.email) : []
           setOrders(myOrders)
         })
         .catch(() => setOrders([]))
