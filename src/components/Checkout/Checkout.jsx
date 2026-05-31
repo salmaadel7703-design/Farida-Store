@@ -15,7 +15,6 @@ const governorates = [
 ]
 
 const VODAFONE_NUMBER = '01025234076'
-const STORE_WHATSAPP = '201025234076'
 
 // ✅ جلب البيانات المحفوظة من localStorage
 const savedInfo = JSON.parse(localStorage.getItem('customerInfo') || 'null')
@@ -43,29 +42,6 @@ function Checkout({ onClose, items, onOrderDone }) {
   const subtotal = items.reduce((sum, item) => sum + item.price, 0)
   const total = subtotal + shipping
 
-  const sendWhatsApp = (order) => {
-    const itemsList = items.map(i => `• ${i.name} — ${i.price} ج`).join('\n')
-    const msg = `
-🛍️ *طلب جديد من فريدة*
-
-📦 رقم الطلب: ${order.trackCode}
-👤 الاسم: ${form.name}
-📱 الموبايل: ${form.phone}
-📍 العنوان: ${form.address} — ${gov}
-💳 الدفع: ${payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}
-
-*المنتجات:*
-${itemsList}
-
-🚚 الشحن: ${shipping} ج
-💰 الإجمالي: ${total} ج
-⏱️ موعد التسليم: ${days} أيام عمل
-    `.trim()
-
-    const url = `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(msg)}`
-    window.open(url, '_blank')
-  }
-
   const placeOrder = async () => {
     if (payMethod === 'vodafone' && (!vodafonePhone || !paidAmount)) {
       alert('من فضلك ادخلي رقم المحفظة والمبلغ المحول')
@@ -91,7 +67,6 @@ ${itemsList}
       setTrackCode(order.trackCode)
       setOrderDone(true)
       onOrderDone()
-      sendWhatsApp(order)
     } catch (err) {
       alert('في مشكلة، حاولي تاني')
     }
