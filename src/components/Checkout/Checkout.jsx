@@ -16,7 +16,7 @@ const governorates = [
 
 const VODAFONE_NUMBER = '01025234076'
 
-function Checkout({ onClose, items }) {
+function Checkout({ onClose, items, onOrderDone }) {
   const [step, setStep] = useState(1)
   const [gov, setGov] = useState('')
   const [payMethod, setPayMethod] = useState('cod')
@@ -27,7 +27,7 @@ function Checkout({ onClose, items }) {
   const [trackCode, setTrackCode] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // ✅ جلب بيانات المستخدم من localStorage
+  // ✅ جلب إيميل العميل من localStorage
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   const selectedGov = governorates.find(g => g.name === gov)
@@ -58,6 +58,7 @@ function Checkout({ onClose, items }) {
       })
       setTrackCode(order.trackCode)
       setOrderDone(true)
+      onOrderDone()  // ✅ بيمسح السلة تلقائياً
     } catch (err) {
       alert('في مشكلة، حاولي تاني')
     }

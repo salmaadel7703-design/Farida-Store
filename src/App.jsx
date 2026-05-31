@@ -37,6 +37,12 @@ function App() {
     setCartItems(prev => [...prev, product])
   }
 
+  // ✅ مسح السلة بعد تأكيد الطلب
+  const clearCart = () => {
+    setCartItems([])
+    setCheckoutOpen(false)
+  }
+
   const handleSearch = (val) => {
     setSearch(val)
     if (val) {
@@ -102,6 +108,7 @@ function App() {
               onClose={() => setCheckoutOpen(false)}
               items={cartItems}
               lang={lang}
+              onOrderDone={clearCart}
             />
           )}
           {adminOpen && <Admin onClose={() => setAdminOpen(false)} />}
