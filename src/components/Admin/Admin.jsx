@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer, getCoupons, addCoupon, deleteCoupon, toggleCoupon } from '../../api'
+import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer, getCoupons, addCoupon, deleteCoupon, toggleCoupon, updateOrder, deleteOrder } from '../../api'
 
 const defaultGovernorates = [
   { name: 'القاهرة', price: 35, days: '2-3' },
@@ -13,6 +13,14 @@ const defaultGovernorates = [
   { name: 'الفيوم', price: 50, days: '3-5' },
   { name: 'طنطا', price: 45, days: '3-4' },
 ]
+
+const STATUS_STEPS = ['جاري التجهيز', 'جاري الشحن', 'تم التوصيل']
+
+const statusColor = (status) => {
+  if (status === 'تم التوصيل') return '#4caf50'
+  if (status === 'جاري الشحن') return '#ff9800'
+  return 'var(--gold)'
+}
 
 function Admin({ onClose }) {
   const [products, setProducts] = useState([])
@@ -117,6 +125,20 @@ function Admin({ onClose }) {
   const handleDeleteOffer = async (id) => {
     await deleteOffer(id)
     setOffers(offers.filter(o => o._id !== id))
+  }
+
+  // ✅ الطلبات
+  const handleNextStatus = async (order) => {
+    const currentIndex = STATUS_STEPS.indexOf(order.status)
+    if (currentIndex === STATUS_STEPS.length - 1) return
+    const nextStatus = STATUS_STEPS[currentIndex + 1]
+    const updated = await updateOrder(order._id, { status: nextStatus })
+    setOrders(orders.map(o => o._id === updated._id ? updated : o))
+  }
+
+  const handleDeleteOrder = async (id) => {
+    await deleteOrder(id)
+    setOrders(orders.filter(o => o._id !== id))
   }
 
   // ✅ الكوبونات
@@ -278,8 +300,8 @@ function Admin({ onClose }) {
             ) : (
               <div className="admin-products">
                 {orders.map(o => (
-                  <div className="admin-product-row" key={o._id}>
-                    <div className="admin-product-info">
+                  <div className="admin-product-row" key={o._id} style={{flexDirection:'column', alignItems:'flex-start', gap:'10px'}}>
+                    <div className="admin-product-info" style={{width:'100%'}}>
                       <div className="admin-product-name">{o.name} — {o.governorate}</div>
                       <div className="admin-product-meta">📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}</div>
                       {o.payMethod === 'vodafone' && (
@@ -288,7 +310,44 @@ function Admin({ onClose }) {
                       {o.discount > 0 && (
                         <div className="admin-product-meta" style={{color:'#4caf50'}}>🎫 كوبون: {o.coupon} · خصم: {o.discount} ج</div>
                       )}
-                      <div className="admin-product-meta" style={{color:'var(--gold)'}}>كود: {o.trackCode} · {o.status}</div>
+                      <div className="admin-product-meta">كود: <span style={{color:'var(--gold)', fontWeight:'700'}}>{o.trackCode}</span></div>
+
+                      {/* ✅ شريط الحالة */}
+                      <div style={{display:'flex', alignItems:'center', gap:'6px', marginTop:'8px', flexWrap:'wrap'}}>
+                        {STATUS_STEPS.map((step, i) => (
+                          <div key={step} style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                            <div style={{
+                              padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:'600',
+                              background: o.status === step ? statusColor(step) : '#222',
+                              color: o.status === step ? '#000' : '#666',
+                              border: `1px solid ${o.status === step ? statusColor(step) : '#333'}`
+                            }}>
+                              {step}
+                            </div>
+                            {i < STATUS_STEPS.length - 1 && <span style={{color:'#444', fontSize:'10px'}}>←</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ✅ الأزرار */}
+                    <div style={{display:'flex', gap:'8px', width:'100%'}}>
+                      {o.status !== 'تم التوصيل' && (
+                        <button
+                          className="admin-edit-btn"
+                          style={{flex:1}}
+                          onClick={() => handleNextStatus(o)}
+                        >
+                          {o.status === 'جاري التجهيز' ? '← جاري الشحن' : '← تم التوصيل'}
+                        </button>
+                      )}
+                      <button
+                        className="admin-delete-btn"
+                        style={{flex: o.status === 'تم التوصيل' ? 1 : 0}}
+                        onClick={() => handleDeleteOrder(o._id)}
+                      >
+                        حذف
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -355,44 +414,22 @@ function Admin({ onClose }) {
           </div>
         )}
 
-        {/* ✅ تبويب الكوبونات */}
         {tab === 'coupons' && (
           <div>
             <div className="admin-form">
               <div className="admin-row">
-                <input
-                  className="auth-input"
-                  placeholder="كود الكوبون (مثلاً: FARIDA20)"
-                  value={newCoupon.code}
-                  onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
-                  style={{textTransform:'uppercase'}}
-                />
-                <input
-                  className="auth-input"
-                  placeholder="قيمة الخصم"
-                  type="number"
-                  value={newCoupon.discount}
-                  onChange={e => setNewCoupon({...newCoupon, discount: e.target.value})}
-                />
+                <input className="auth-input" placeholder="كود الكوبون (مثلاً: FARIDA20)" value={newCoupon.code} onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} style={{textTransform:'uppercase'}} />
+                <input className="auth-input" placeholder="قيمة الخصم" type="number" value={newCoupon.discount} onChange={e => setNewCoupon({...newCoupon, discount: e.target.value})} />
               </div>
               <div className="admin-row">
                 <select className="auth-input" value={newCoupon.type} onChange={e => setNewCoupon({...newCoupon, type: e.target.value})}>
                   <option value="percent">نسبة مئوية (%)</option>
                   <option value="fixed">مبلغ ثابت (ج)</option>
                 </select>
-                <input
-                  className="auth-input"
-                  placeholder="أقصى عدد استخدامات"
-                  type="number"
-                  value={newCoupon.maxUses}
-                  onChange={e => setNewCoupon({...newCoupon, maxUses: e.target.value})}
-                />
+                <input className="auth-input" placeholder="أقصى عدد استخدامات" type="number" value={newCoupon.maxUses} onChange={e => setNewCoupon({...newCoupon, maxUses: e.target.value})} />
               </div>
-              <button className="auth-btn" onClick={handleAddCoupon} disabled={!newCoupon.code || !newCoupon.discount}>
-                إضافة كوبون
-              </button>
+              <button className="auth-btn" onClick={handleAddCoupon} disabled={!newCoupon.code || !newCoupon.discount}>إضافة كوبون</button>
             </div>
-
             <div className="admin-products">
               {coupons.length === 0 ? (
                 <div className="admin-empty">
@@ -404,24 +441,13 @@ function Admin({ onClose }) {
                   <div className="admin-product-row" key={c._id}>
                     <div className="admin-product-info">
                       <div className="admin-product-name" style={{letterSpacing:'2px'}}>{c.code}</div>
-                      <div className="admin-product-meta">
-                        خصم {c.type === 'percent' ? `${c.discount}%` : `${c.discount} ج`} · استُخدم {c.usedCount}/{c.maxUses}
-                      </div>
-                      <div style={{
-                        display:'inline-block', marginTop:'4px',
-                        padding:'2px 10px', borderRadius:'20px', fontSize:'11px',
-                        background: c.active ? '#1a3a1a' : '#3a1a1a',
-                        color: c.active ? '#4caf50' : '#f44336'
-                      }}>
+                      <div className="admin-product-meta">خصم {c.type === 'percent' ? `${c.discount}%` : `${c.discount} ج`} · استُخدم {c.usedCount}/{c.maxUses}</div>
+                      <div style={{display:'inline-block', marginTop:'4px', padding:'2px 10px', borderRadius:'20px', fontSize:'11px', background: c.active ? '#1a3a1a' : '#3a1a1a', color: c.active ? '#4caf50' : '#f44336'}}>
                         {c.active ? '● فعال' : '● منتهي'}
                       </div>
                     </div>
                     <div className="admin-product-actions">
-                      <button
-                        className="admin-edit-btn"
-                        onClick={() => handleToggleCoupon(c._id, c.active)}
-                        style={{background: c.active ? '#3a1a1a' : '#1a3a1a', color: c.active ? '#f44336' : '#4caf50'}}
-                      >
+                      <button className="admin-edit-btn" onClick={() => handleToggleCoupon(c._id, c.active)} style={{background: c.active ? '#3a1a1a' : '#1a3a1a', color: c.active ? '#f44336' : '#4caf50'}}>
                         {c.active ? 'إيقاف' : 'تفعيل'}
                       </button>
                       <button className="admin-delete-btn" onClick={() => handleDeleteCoupon(c._id)}>حذف</button>

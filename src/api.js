@@ -46,6 +46,22 @@ export const getOrders = async () => {
   return res.json()
 }
 
+export const updateOrder = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/orders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  return res.json()
+}
+
+export const deleteOrder = async (id) => {
+  const res = await fetch(`${BASE_URL}/orders/${id}`, {
+    method: 'DELETE'
+  })
+  return res.json()
+}
+
 export const trackOrder = async (code) => {
   const res = await fetch(`${BASE_URL}/orders/track/${code}`)
   return res.json()
@@ -141,6 +157,7 @@ export const deleteOffer = async (id) => {
   })
   return res.json()
 }
+
 // الكوبونات
 export const validateCoupon = async (code) => {
   const res = await fetch(`${BASE_URL}/coupons/validate`, {
