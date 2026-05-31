@@ -15,19 +15,26 @@ const governorates = [
 ]
 
 const VODAFONE_NUMBER = '01025234076'
+const STORE_WHATSAPP = '201025234076'
+
+// ✅ جلب البيانات المحفوظة من localStorage
+const savedInfo = JSON.parse(localStorage.getItem('customerInfo') || 'null')
 
 function Checkout({ onClose, items, onOrderDone }) {
   const [step, setStep] = useState(1)
-  const [gov, setGov] = useState('')
+  const [gov, setGov] = useState(savedInfo?.gov || '')
   const [payMethod, setPayMethod] = useState('cod')
-  const [form, setForm] = useState({ name: '', phone: '', address: '' })
+  const [form, setForm] = useState({
+    name: savedInfo?.name || '',
+    phone: savedInfo?.phone || '',
+    address: savedInfo?.address || '',
+  })
   const [vodafonePhone, setVodafonePhone] = useState('')
   const [paidAmount, setPaidAmount] = useState('')
   const [orderDone, setOrderDone] = useState(false)
   const [trackCode, setTrackCode] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // ✅ جلب إيميل العميل من localStorage
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   const selectedGov = governorates.find(g => g.name === gov)
@@ -35,6 +42,29 @@ function Checkout({ onClose, items, onOrderDone }) {
   const days = selectedGov ? selectedGov.days : ''
   const subtotal = items.reduce((sum, item) => sum + item.price, 0)
   const total = subtotal + shipping
+
+  const sendWhatsApp = (order) => {
+    const itemsList = items.map(i => `• ${i.name} — ${i.price} ج`).join('\n')
+    const msg = `
+🛍️ *طلب جديد من فريدة*
+
+📦 رقم الطلب: ${order.trackCode}
+👤 الاسم: ${form.name}
+📱 الموبايل: ${form.phone}
+📍 العنوان: ${form.address} — ${gov}
+💳 الدفع: ${payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}
+
+*المنتجات:*
+${itemsList}
+
+🚚 الشحن: ${shipping} ج
+💰 الإجمالي: ${total} ج
+⏱️ موعد التسليم: ${days} أيام عمل
+    `.trim()
+
+    const url = `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(msg)}`
+    window.open(url, '_blank')
+  }
 
   const placeOrder = async () => {
     if (payMethod === 'vodafone' && (!vodafonePhone || !paidAmount)) {
@@ -44,7 +74,7 @@ function Checkout({ onClose, items, onOrderDone }) {
     setLoading(true)
     try {
       const order = await addOrder({
-        email: user?.email || '',  // ✅ ربط الطلب بحساب العميل
+        email: user?.email || '',
         name: form.name,
         phone: form.phone,
         address: form.address,
@@ -56,9 +86,12 @@ function Checkout({ onClose, items, onOrderDone }) {
         total,
         shipping,
       })
+      // ✅ حفظ بيانات العميل للمرة الجاية
+      localStorage.setItem('customerInfo', JSON.stringify({ name: form.name, phone: form.phone, address: form.address, gov }))
       setTrackCode(order.trackCode)
       setOrderDone(true)
-      onOrderDone()  // ✅ بيمسح السلة تلقائياً
+      onOrderDone()
+      sendWhatsApp(order)
     } catch (err) {
       alert('في مشكلة، حاولي تاني')
     }
