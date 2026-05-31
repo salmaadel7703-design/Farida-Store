@@ -24,7 +24,7 @@ function App() {
   const [lang, setLang] = useState('ar')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
-  const [toast, setToast] = useState('')  // ✅ إشعار السلة
+  const [toast, setToast] = useState('')
 
   useEffect(() => {
     setTimeout(() => setShowSplash(false), 2500)
@@ -35,10 +35,36 @@ function App() {
   }, [lang])
 
   const addToCart = (product) => {
-    setCartItems(prev => [...prev, product])
-    // ✅ إظهار الإشعار وإخفاؤه بعد 2 ثانية
+    setCartItems(prev => {
+      // ✅ لو نفس المنتج بنفس المقاس واللون، زود الكمية
+      const existing = prev.findIndex(i => i._id === product._id && i.size === product.size && i.color === product.color)
+      if (existing !== -1) {
+        const updated = [...prev]
+        updated[existing] = { ...updated[existing], qty: (updated[existing].qty || 1) + 1 }
+        return updated
+      }
+      return [...prev, { ...product, qty: 1 }]
+    })
     setToast(`✅ تمت إضافة "${product.name}" للسلة`)
     setTimeout(() => setToast(''), 2000)
+  }
+
+  // ✅ حذف منتج من السلة
+  const removeFromCart = (index) => {
+    setCartItems(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // ✅ تحديث كمية منتج
+  const updateQty = (index, qty) => {
+    if (qty < 1) {
+      removeFromCart(index)
+      return
+    }
+    setCartItems(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], qty }
+      return updated
+    })
   }
 
   const clearCart = () => {
@@ -67,7 +93,7 @@ function App() {
       {showSplash ? <Splash /> : (
         <>
           <Navbar
-            cartCount={cartItems.length}
+            cartCount={cartItems.reduce((sum, i) => sum + (i.qty || 1), 0)}
             onCartClick={() => setCartOpen(true)}
             onAuthClick={() => setAuthOpen(true)}
             onAdminClick={() => setAdminOpen(true)}
@@ -88,7 +114,6 @@ function App() {
           />
           <Footer lang={lang} />
 
-          {/* ✅ الإشعار */}
           {toast && (
             <div style={{
               position: 'fixed',
@@ -117,6 +142,8 @@ function App() {
               setCartOpen(false)
               setCheckoutOpen(true)
             }}
+            onRemoveItem={removeFromCart}
+            onUpdateQty={updateQty}
             lang={lang}
           />
           {authOpen && <Auth onClose={() => setAuthOpen(false)} lang={lang} cartItems={cartItems} />}
