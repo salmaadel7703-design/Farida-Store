@@ -141,3 +141,42 @@ export const deleteOffer = async (id) => {
   })
   return res.json()
 }
+// الكوبونات
+export const validateCoupon = async (code) => {
+  const res = await fetch(`${BASE_URL}/coupons/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  })
+  return res.json()
+}
+
+export const getCoupons = async () => {
+  const res = await fetch(`${BASE_URL}/coupons`)
+  return res.json()
+}
+
+export const addCoupon = async (coupon) => {
+  const res = await fetch(`${BASE_URL}/coupons`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(coupon)
+  })
+  return res.json()
+}
+
+export const deleteCoupon = async (id) => {
+  const res = await fetch(`${BASE_URL}/coupons/${id}`, {
+    method: 'DELETE'
+  })
+  return res.json()
+}
+
+export const toggleCoupon = async (id, active) => {
+  const res = await fetch(`${BASE_URL}/coupons/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active })
+  })
+  return res.json()
+}

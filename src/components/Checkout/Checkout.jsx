@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addOrder } from '../../api'
+import { addOrder, validateCoupon } from '../../api'
 
 const governorates = [
   { name: 'القاهرة', price: 35, days: '2-3' },
@@ -16,7 +16,6 @@ const governorates = [
 
 const VODAFONE_NUMBER = '01025234076'
 
-// ✅ جلب البيانات المحفوظة من localStorage
 const savedInfo = JSON.parse(localStorage.getItem('customerInfo') || 'null')
 
 function Checkout({ onClose, items, onOrderDone }) {
@@ -34,13 +33,44 @@ function Checkout({ onClose, items, onOrderDone }) {
   const [trackCode, setTrackCode] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // ✅ الكوبون
+  const [couponCode, setCouponCode] = useState('')
+  const [couponData, setCouponData] = useState(null)
+  const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   const selectedGov = governorates.find(g => g.name === gov)
   const shipping = selectedGov ? selectedGov.price : 0
   const days = selectedGov ? selectedGov.days : ''
   const subtotal = items.reduce((sum, item) => sum + item.price, 0)
-  const total = subtotal + shipping
+
+  const discountAmount = couponData
+    ? couponData.type === 'percent'
+      ? Math.round(subtotal * couponData.discount / 100)
+      : couponData.discount
+    : 0
+
+  const total = subtotal + shipping - discountAmount
+
+  const handleCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    setCouponData(null)
+    try {
+      const res = await validateCoupon(couponCode)
+      if (res.message) {
+        setCouponError(res.message)
+      } else {
+        setCouponData(res)
+      }
+    } catch {
+      setCouponError('في مشكلة، حاولي تاني')
+    }
+    setCouponLoading(false)
+  }
 
   const placeOrder = async () => {
     if (payMethod === 'vodafone' && (!vodafonePhone || !paidAmount)) {
@@ -61,8 +91,9 @@ function Checkout({ onClose, items, onOrderDone }) {
         items: items.map(i => ({ name: i.name, price: i.price, qty: i.qty || 1, size: i.size || '' })),
         total,
         shipping,
+        coupon: couponData?.code || '',
+        discount: discountAmount,
       })
-      // ✅ حفظ بيانات العميل للمرة الجاية
       localStorage.setItem('customerInfo', JSON.stringify({ name: form.name, phone: form.phone, address: form.address, gov }))
       setTrackCode(order.trackCode)
       setOrderDone(true)
@@ -142,11 +173,54 @@ function Checkout({ onClose, items, onOrderDone }) {
                   </div>
                 )}
 
+                {/* ✅ كوبون الخصم */}
+                <div style={{margin:'0 0 1rem'}}>
+                  <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'6px'}}>🎫 عندك كوبون خصم؟</div>
+                  <div style={{display:'flex', gap:'8px'}}>
+                    <input
+                      className="auth-input"
+                      placeholder="ادخلي الكود"
+                      value={couponCode}
+                      onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError('') }}
+                      style={{marginBottom:0}}
+                      disabled={!!couponData}
+                    />
+                    <button
+                      onClick={handleCoupon}
+                      disabled={couponLoading || !couponCode.trim() || !!couponData}
+                      style={{
+                        background: couponData ? '#4caf50' : 'var(--gold)',
+                        color: '#000', border: 'none', borderRadius: '8px',
+                        padding: '0 16px', fontWeight: '700',
+                        cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+                      }}
+                    >
+                      {couponLoading ? '...' : couponData ? '✓' : 'تطبيق'}
+                    </button>
+                  </div>
+                  {couponData && (
+                    <div style={{color:'#4caf50', fontSize:'13px', marginTop:'6px'}}>
+                      ✅ خصم {couponData.type === 'percent' ? `${couponData.discount}%` : `${couponData.discount} ج`} اتطبق!
+                    </div>
+                  )}
+                  {couponError && (
+                    <div style={{color:'#f44336', fontSize:'13px', marginTop:'6px'}}>❌ {couponError}</div>
+                  )}
+                </div>
+
+                {/* ملخص الطلب */}
                 <div className="order-summary">
                   <div className="summary-row"><span>المنتجات</span><span>{subtotal} ج</span></div>
+                  {discountAmount > 0 && (
+                    <div className="summary-row" style={{color:'#4caf50'}}>
+                      <span>خصم ({couponData.code})</span>
+                      <span>- {discountAmount} ج</span>
+                    </div>
+                  )}
                   <div className="summary-row"><span>الشحن</span><span>{shipping} ج</span></div>
                   <div className="summary-row total-row"><span>الإجمالي</span><span>{total} ج</span></div>
                 </div>
+
                 <button className="auth-btn" onClick={placeOrder} disabled={loading}>
                   {loading ? 'جاري الإرسال...' : 'تأكيد الطلب'}
                 </button>
@@ -159,6 +233,11 @@ function Checkout({ onClose, items, onOrderDone }) {
             <div className="success-icon">✅</div>
             <div className="success-title">تم تأكيد طلبك!</div>
             <div className="success-sub">شكراً يا {form.name}، هيوصلك خلال {days} أيام</div>
+            {discountAmount > 0 && (
+              <div style={{color:'#4caf50', fontSize:'14px', margin:'8px 0'}}>
+                🎉 وفرتي {discountAmount} ج بالكوبون!
+              </div>
+            )}
             <div className="track-code">
               <div style={{fontSize:'12px', color:'var(--gray)', marginBottom:'8px'}}>كود تتبع الشحنة</div>
               <div style={{fontSize:'22px', color:'var(--gold)', fontWeight:'700', letterSpacing:'3px'}}>{trackCode}</div>

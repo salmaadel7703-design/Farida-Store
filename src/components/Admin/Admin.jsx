@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer } from '../../api'
+import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer, getCoupons, addCoupon, deleteCoupon, toggleCoupon } from '../../api'
 
 const defaultGovernorates = [
   { name: 'القاهرة', price: 35, days: '2-3' },
@@ -19,11 +19,13 @@ function Admin({ onClose }) {
   const [orders, setOrders] = useState([])
   const [slides, setSlides] = useState([])
   const [offers, setOffers] = useState([])
+  const [coupons, setCoupons] = useState([])
   const [tab, setTab] = useState('products')
   const [editing, setEditing] = useState(null)
   const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
   const [newSlide, setNewSlide] = useState({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
   const [newOffer, setNewOffer] = useState({ title: '', discount: '', sub: '', image: '' })
+  const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'percent', maxUses: 100 })
   const [showAdd, setShowAdd] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -46,6 +48,9 @@ function Admin({ onClose }) {
     getOffers()
       .then(data => setOffers(Array.isArray(data) ? data : []))
       .catch(() => setOffers([]))
+    getCoupons()
+      .then(data => setCoupons(Array.isArray(data) ? data : []))
+      .catch(() => setCoupons([]))
   }, [])
 
   const handleImageUpload = async (e, target = 'product', isEdit = false, isExtra = false) => {
@@ -55,7 +60,6 @@ function Admin({ onClose }) {
     const res = await uploadImage(file)
     if (target === 'product') {
       if (isExtra) {
-        // ✅ إضافة صورة إضافية
         if (isEdit) setEditing({ ...editing, images: [...(editing.images || []), res.url] })
         else setNewProduct({ ...newProduct, images: [...(newProduct.images || []), res.url] })
       } else {
@@ -115,6 +119,29 @@ function Admin({ onClose }) {
     setOffers(offers.filter(o => o._id !== id))
   }
 
+  // ✅ الكوبونات
+  const handleAddCoupon = async () => {
+    if (!newCoupon.code || !newCoupon.discount) return
+    const coupon = await addCoupon({
+      ...newCoupon,
+      code: newCoupon.code.toUpperCase(),
+      discount: Number(newCoupon.discount),
+      maxUses: Number(newCoupon.maxUses),
+    })
+    setCoupons([coupon, ...coupons])
+    setNewCoupon({ code: '', discount: '', type: 'percent', maxUses: 100 })
+  }
+
+  const handleDeleteCoupon = async (id) => {
+    await deleteCoupon(id)
+    setCoupons(coupons.filter(c => c._id !== id))
+  }
+
+  const handleToggleCoupon = async (id, active) => {
+    const updated = await toggleCoupon(id, !active)
+    setCoupons(coupons.map(c => c._id === updated._id ? updated : c))
+  }
+
   const saveGovernorates = (updated) => {
     setGovernorates(updated)
     localStorage.setItem('governorates', JSON.stringify(updated))
@@ -136,6 +163,7 @@ function Admin({ onClose }) {
           <button className={`auth-tab ${tab === 'slides' ? 'active' : ''}`} onClick={() => setTab('slides')}>السلايدر</button>
           <button className={`auth-tab ${tab === 'offers' ? 'active' : ''}`} onClick={() => setTab('offers')}>العروض</button>
           <button className={`auth-tab ${tab === 'shipping' ? 'active' : ''}`} onClick={() => setTab('shipping')}>الشحن</button>
+          <button className={`auth-tab ${tab === 'coupons' ? 'active' : ''}`} onClick={() => setTab('coupons')}>🎫 كوبونات</button>
         </div>
 
         {tab === 'products' && (
@@ -163,14 +191,11 @@ function Admin({ onClose }) {
                     <option>لانجيري</option>
                   </select>
                 </div>
-                {/* ✅ الألوان والمقاسات */}
                 <input className="auth-input" placeholder="الألوان مفصولة بفاصلة (مثلاً: أحمر, أسود, بيج)" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
-                <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة (مثلاً: S, M, L) أو اتركيه فاضي للـ default" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
-                {/* ✅ الصورة الرئيسية */}
+                <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة (مثلاً: S, M, L)" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>الصورة الرئيسية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product')} />
                 {newProduct.image && <img src={newProduct.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
-                {/* ✅ صور إضافية */}
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صور إضافية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', false, true)} />
                 <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
@@ -198,7 +223,6 @@ function Admin({ onClose }) {
                           <input className="auth-input" placeholder="السعر" value={editing.price} onChange={e => setEditing({...editing, price: Number(e.target.value)})} />
                           <input className="auth-input" placeholder="الكمية" value={editing.stock} onChange={e => setEditing({...editing, stock: Number(e.target.value)})} />
                         </div>
-                        {/* ✅ الألوان والمقاسات في التعديل */}
                         <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={editing.colors || ''} onChange={e => setEditing({...editing, colors: e.target.value})} />
                         <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={editing.sizes || ''} onChange={e => setEditing({...editing, sizes: e.target.value})} />
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة الرئيسية</div>
@@ -260,6 +284,9 @@ function Admin({ onClose }) {
                       <div className="admin-product-meta">📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}</div>
                       {o.payMethod === 'vodafone' && (
                         <div className="admin-product-meta" style={{color:'#ff6b6b'}}>محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج</div>
+                      )}
+                      {o.discount > 0 && (
+                        <div className="admin-product-meta" style={{color:'#4caf50'}}>🎫 كوبون: {o.coupon} · خصم: {o.discount} ج</div>
                       )}
                       <div className="admin-product-meta" style={{color:'var(--gold)'}}>كود: {o.trackCode} · {o.status}</div>
                     </div>
@@ -324,6 +351,84 @@ function Admin({ onClose }) {
                   <button className="admin-delete-btn" onClick={() => handleDeleteOffer(o._id)}>حذف</button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ تبويب الكوبونات */}
+        {tab === 'coupons' && (
+          <div>
+            <div className="admin-form">
+              <div className="admin-row">
+                <input
+                  className="auth-input"
+                  placeholder="كود الكوبون (مثلاً: FARIDA20)"
+                  value={newCoupon.code}
+                  onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
+                  style={{textTransform:'uppercase'}}
+                />
+                <input
+                  className="auth-input"
+                  placeholder="قيمة الخصم"
+                  type="number"
+                  value={newCoupon.discount}
+                  onChange={e => setNewCoupon({...newCoupon, discount: e.target.value})}
+                />
+              </div>
+              <div className="admin-row">
+                <select className="auth-input" value={newCoupon.type} onChange={e => setNewCoupon({...newCoupon, type: e.target.value})}>
+                  <option value="percent">نسبة مئوية (%)</option>
+                  <option value="fixed">مبلغ ثابت (ج)</option>
+                </select>
+                <input
+                  className="auth-input"
+                  placeholder="أقصى عدد استخدامات"
+                  type="number"
+                  value={newCoupon.maxUses}
+                  onChange={e => setNewCoupon({...newCoupon, maxUses: e.target.value})}
+                />
+              </div>
+              <button className="auth-btn" onClick={handleAddCoupon} disabled={!newCoupon.code || !newCoupon.discount}>
+                إضافة كوبون
+              </button>
+            </div>
+
+            <div className="admin-products">
+              {coupons.length === 0 ? (
+                <div className="admin-empty">
+                  <div style={{fontSize:'48px', marginBottom:'1rem'}}>🎫</div>
+                  <p>مفيش كوبونات لسه</p>
+                </div>
+              ) : (
+                coupons.map(c => (
+                  <div className="admin-product-row" key={c._id}>
+                    <div className="admin-product-info">
+                      <div className="admin-product-name" style={{letterSpacing:'2px'}}>{c.code}</div>
+                      <div className="admin-product-meta">
+                        خصم {c.type === 'percent' ? `${c.discount}%` : `${c.discount} ج`} · استُخدم {c.usedCount}/{c.maxUses}
+                      </div>
+                      <div style={{
+                        display:'inline-block', marginTop:'4px',
+                        padding:'2px 10px', borderRadius:'20px', fontSize:'11px',
+                        background: c.active ? '#1a3a1a' : '#3a1a1a',
+                        color: c.active ? '#4caf50' : '#f44336'
+                      }}>
+                        {c.active ? '● فعال' : '● منتهي'}
+                      </div>
+                    </div>
+                    <div className="admin-product-actions">
+                      <button
+                        className="admin-edit-btn"
+                        onClick={() => handleToggleCoupon(c._id, c.active)}
+                        style={{background: c.active ? '#3a1a1a' : '#1a3a1a', color: c.active ? '#f44336' : '#4caf50'}}
+                      >
+                        {c.active ? 'إيقاف' : 'تفعيل'}
+                      </button>
+                      <button className="admin-delete-btn" onClick={() => handleDeleteCoupon(c._id)}>حذف</button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
