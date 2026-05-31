@@ -27,6 +27,9 @@ function Checkout({ onClose, items }) {
   const [trackCode, setTrackCode] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // ✅ جلب بيانات المستخدم من localStorage
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+
   const selectedGov = governorates.find(g => g.name === gov)
   const shipping = selectedGov ? selectedGov.price : 0
   const days = selectedGov ? selectedGov.days : ''
@@ -41,6 +44,7 @@ function Checkout({ onClose, items }) {
     setLoading(true)
     try {
       const order = await addOrder({
+        email: user?.email || '',  // ✅ ربط الطلب بحساب العميل
         name: form.name,
         phone: form.phone,
         address: form.address,
