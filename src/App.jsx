@@ -29,6 +29,10 @@ function App() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [toast, setToast] = useState('')
+  const [catImages, setCatImages] = useState(() => {
+    const saved = localStorage.getItem('catImages')
+    return saved ? JSON.parse(saved) : {}
+  })
   const scrollPos = useRef(0)
 
   useEffect(() => {
@@ -49,6 +53,16 @@ function App() {
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [selectedProduct])
+
+  // لما الأدمن يعدل صور الأقسام نحدث الـ state
+  useEffect(() => {
+    const onStorage = () => {
+      const saved = localStorage.getItem('catImages')
+      if (saved) setCatImages(JSON.parse(saved))
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const openProduct = (p) => {
     scrollPos.current = window.scrollY
@@ -122,7 +136,7 @@ function App() {
             onFilterClick={handleFilter}
           />
           <Hero lang={lang} />
-          <Categories lang={lang} onFilterClick={handleFilter} />
+          <Categories lang={lang} onFilterClick={handleFilter} catImages={catImages} />
           <Offers lang={lang} />
           <Products
             onAddToCart={addToCart}

@@ -49,8 +49,10 @@ function Admin({ onClose }) {
     return saved ? JSON.parse(saved) : defaultGovernorates
   })
   const [editingGov, setEditingGov] = useState(null)
-
-  // ✅ المشرفين
+  const [catImages, setCatImages] = useState(() => {
+    const saved = localStorage.getItem('catImages')
+    return saved ? JSON.parse(saved) : {}
+  })
   const [adminEmail, setAdminEmail] = useState('')
   const [adminMsg, setAdminMsg] = useState('')
   const [adminLoading, setAdminLoading] = useState(false)
@@ -117,7 +119,6 @@ function Admin({ onClose }) {
   const handleToggleCoupon = async (id, active) => { const updated = await toggleCoupon(id, !active); setCoupons(coupons.map(c => c._id === updated._id ? updated : c)) }
   const saveGovernorates = (updated) => { setGovernorates(updated); localStorage.setItem('governorates', JSON.stringify(updated)); setEditingGov(null) }
 
-  // ✅ جعل مستخدم أدمن
   const handleMakeAdmin = async () => {
     if (!adminEmail.trim()) return
     setAdminLoading(true)
@@ -153,6 +154,7 @@ function Admin({ onClose }) {
           <button className={`auth-tab ${tab === 'shipping' ? 'active' : ''}`} onClick={() => setTab('shipping')}>الشحن</button>
           <button className={`auth-tab ${tab === 'coupons' ? 'active' : ''}`} onClick={() => setTab('coupons')}>🎫 كوبونات</button>
           <button className={`auth-tab ${tab === 'admins' ? 'active' : ''}`} onClick={() => setTab('admins')}>👥 مشرفين</button>
+          <button className={`auth-tab ${tab === 'categories' ? 'active' : ''}`} onClick={() => setTab('categories')}>🖼️ الأقسام</button>
         </div>
 
         {tab === 'products' && (
@@ -388,37 +390,72 @@ function Admin({ onClose }) {
           </div>
         )}
 
-        {/* ✅ تبويب المشرفين */}
         {tab === 'admins' && (
           <div className="admin-form">
-            <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'6px'}}>
-              إضافة مشرف جديد
-            </div>
+            <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'6px'}}>إضافة مشرف جديد</div>
             <p style={{color:'#888', fontSize:'12px', marginBottom:'12px'}}>
               المستخدم لازم يكون عامل حساب الأول، بعدين تكتب إيميله هنا وتديه صلاحية الأدمن
             </p>
-            <input
-              className="auth-input"
-              type="email"
-              placeholder="إيميل المشرف الجديد"
-              value={adminEmail}
-              onChange={e => { setAdminEmail(e.target.value); setAdminMsg('') }}
-            />
-            <button
-              className="auth-btn"
-              onClick={handleMakeAdmin}
-              disabled={adminLoading || !adminEmail.trim()}
-            >
+            <input className="auth-input" type="email" placeholder="إيميل المشرف الجديد" value={adminEmail} onChange={e => { setAdminEmail(e.target.value); setAdminMsg('') }} />
+            <button className="auth-btn" onClick={handleMakeAdmin} disabled={adminLoading || !adminEmail.trim()}>
               {adminLoading ? 'جاري...' : 'اجعله مشرف'}
             </button>
             {adminMsg && (
-              <div style={{
-                marginTop:'8px', fontSize:'13px',
-                color: adminMsg.startsWith('✅') ? '#4caf50' : '#f44336'
-              }}>
+              <div style={{marginTop:'8px', fontSize:'13px', color: adminMsg.startsWith('✅') ? '#4caf50' : '#f44336'}}>
                 {adminMsg}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'categories' && (
+          <div className="admin-form">
+            <p style={{color:'#888', fontSize:'12px', marginBottom:'16px'}}>
+              ارفعي صورة لكل قسم تظهر كخلفية في الصفحة الرئيسية
+            </p>
+            {[
+              { key: 'cat_pajamas', label: 'بيجامات' },
+              { key: 'cat_kaftans', label: 'كاشات' },
+              { key: 'cat_lingerie', label: 'لانجيري' },
+              { key: 'cat_offers', label: 'العروض' },
+            ].map(({ key, label }) => (
+              <div key={key} style={{marginBottom:'20px', paddingBottom:'20px', borderBottom:'1px solid #222'}}>
+                <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'8px'}}>{label}</div>
+                {catImages[key] && (
+                  <img src={catImages[key]} alt={label} style={{width:'120px', height:'80px', objectFit:'cover', borderRadius:'6px', marginBottom:'8px', display:'block'}} />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="auth-input"
+                  onChange={async (e) => {
+                    const file = e.target.files[0]
+                    if (!file) return
+                    setUploading(true)
+                    const res = await uploadImage(file)
+                    const updated = { ...catImages, [key]: res.url }
+                    setCatImages(updated)
+                    localStorage.setItem('catImages', JSON.stringify(updated))
+                    setUploading(false)
+                  }}
+                />
+                {catImages[key] && (
+                  <button
+                    className="admin-delete-btn"
+                    style={{marginTop:'6px', fontSize:'11px'}}
+                    onClick={() => {
+                      const updated = { ...catImages }
+                      delete updated[key]
+                      setCatImages(updated)
+                      localStorage.setItem('catImages', JSON.stringify(updated))
+                    }}
+                  >
+                    حذف الصورة
+                  </button>
+                )}
+              </div>
+            ))}
+            {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
           </div>
         )}
 
