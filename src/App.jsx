@@ -12,6 +12,7 @@ import ProductPage from './components/ProductPage/ProductPage'
 import Checkout from './components/Checkout/Checkout'
 import Admin from './components/Admin/Admin'
 import TrackOrder from './components/TrackOrder/TrackOrder'
+import MyOrders from './components/MyOrders/MyOrders'
 import './index.css'
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
   const [trackOpen, setTrackOpen] = useState(false)
+  const [ordersOpen, setOrdersOpen] = useState(false)
   const [lang, setLang] = useState('ar')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
@@ -37,7 +39,6 @@ function App() {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
   }, [lang])
 
-  // ✅ Back button على الموبايل
   useEffect(() => {
     const handlePopState = () => {
       if (selectedProduct) {
@@ -102,6 +103,8 @@ function App() {
     setTimeout(() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+
   return (
     <div>
       {showSplash ? <Splash /> : (
@@ -112,6 +115,7 @@ function App() {
             onAuthClick={() => setAuthOpen(true)}
             onAdminClick={() => setAdminOpen(true)}
             onTrackClick={() => setTrackOpen(true)}
+            onOrdersClick={() => setOrdersOpen(true)}
             lang={lang}
             setLang={setLang}
             onSearch={handleSearch}
@@ -168,6 +172,7 @@ function App() {
           )}
           {adminOpen && <Admin onClose={() => setAdminOpen(false)} />}
           {trackOpen && <TrackOrder onClose={() => setTrackOpen(false)} />}
+          {ordersOpen && user && <MyOrders onClose={() => setOrdersOpen(false)} />}
         </>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClick, lang, setLang, onSearch, onFilterClick }) {
+function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClick, onOrdersClick, lang, setLang, onSearch, onFilterClick }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
 
@@ -35,6 +35,16 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClic
               <button className={`lang-btn ${lang === 'ar' ? 'active' : ''}`} onClick={() => setLang('ar')}>عربي</button>
               <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
             </div>
+            {/* ✅ أيقونة تتبع الطلب */}
+            <div className="cart-btn" onClick={onTrackClick} title="تتبع الطلب">
+              📦
+            </div>
+            {/* ✅ أيقونة طلباتي - للمستخدم المسجل بس */}
+            {user && (
+              <div className="cart-btn" onClick={onOrdersClick} title="طلباتي">
+                🧾
+              </div>
+            )}
             <div className="cart-btn" onClick={onCartClick}>
               🛍 <span className="cart-badge">{cartCount}</span>
             </div>
@@ -88,7 +98,6 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClic
               <div className="cat-item" onClick={() => { onAuthClick(); setDrawerOpen(false) }}>{lang === 'ar' ? 'إنشاء حساب جديد' : 'Register'}</div>
             </>
           )}
-          {/* ✅ تتبع الطلب */}
           <div className="cat-item" onClick={() => { onTrackClick(); setDrawerOpen(false) }}>
             📦 {lang === 'ar' ? 'تتبع الطلب' : 'Track Order'}
           </div>
