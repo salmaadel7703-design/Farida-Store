@@ -17,15 +17,13 @@ function ProductPage({ product, onClose, onAddToCart }) {
   return (
     <>
       <div className="overlay" onClick={onClose}></div>
-      <div className="product-page">
+      <div className="product-page" onClick={onClose}>
         <button className="drawer-close product-page-close" onClick={onClose}>✕</button>
-        <div className="product-page-inner">
+        <div className="product-page-inner" onClick={e => e.stopPropagation()}>
           <div className="product-page-img" style={{position:'relative'}}>
             {images.length > 0 ? (
               <>
                 <img src={images[activeImg]} alt={product.name} style={{width:'100%', height:'100%', objectFit:'cover'}} />
-
-                {/* ✅ سهام التنقل */}
                 {images.length > 1 && (
                   <>
                     <button onClick={prevImg} style={{
@@ -38,8 +36,6 @@ function ProductPage({ product, onClose, onAddToCart }) {
                       background:'rgba(0,0,0,0.5)', color:'white', border:'none',
                       borderRadius:'50%', width:'36px', height:'36px', cursor:'pointer', fontSize:'18px', zIndex:10
                     }}>›</button>
-
-                    {/* ✅ نقاط */}
                     <div style={{position:'absolute', bottom:'70px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px'}}>
                       {images.map((_, i) => (
                         <div key={i} onClick={() => setActiveImg(i)} style={{
@@ -48,8 +44,6 @@ function ProductPage({ product, onClose, onAddToCart }) {
                         }} />
                       ))}
                     </div>
-
-                    {/* ✅ صور مصغرة */}
                     <div style={{display:'flex', gap:'8px', padding:'8px', overflowX:'auto'}}>
                       {images.map((img, i) => (
                         <img key={i} src={img} alt="" onClick={() => setActiveImg(i)} style={{
