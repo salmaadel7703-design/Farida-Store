@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Splash from './components/Splash/Splash'
 import Navbar from './components/Navbar/Navbar'
 import Hero from './components/Hero/Hero'
@@ -27,6 +27,7 @@ function App() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [toast, setToast] = useState('')
+  const scrollPos = useRef(0)
 
   useEffect(() => {
     setTimeout(() => setShowSplash(false), 2500)
@@ -35,6 +36,16 @@ function App() {
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
   }, [lang])
+
+  const openProduct = (p) => {
+    scrollPos.current = window.scrollY
+    setSelectedProduct(p)
+  }
+
+  const closeProduct = () => {
+    setSelectedProduct(null)
+    setTimeout(() => window.scrollTo({ top: scrollPos.current, behavior: 'instant' }), 0)
+  }
 
   const addToCart = (product) => {
     setCartItems(prev => {
@@ -55,10 +66,7 @@ function App() {
   }
 
   const updateQty = (index, qty) => {
-    if (qty < 1) {
-      removeFromCart(index)
-      return
-    }
+    if (qty < 1) { removeFromCart(index); return }
     setCartItems(prev => {
       const updated = [...prev]
       updated[index] = { ...updated[index], qty }
@@ -73,18 +81,12 @@ function App() {
 
   const handleSearch = (val) => {
     setSearch(val)
-    if (val) {
-      setTimeout(() => {
-        document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
-    }
+    if (val) setTimeout(() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
   const handleFilter = (cat) => {
     setFilter(cat)
-    setTimeout(() => {
-      document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    setTimeout(() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
   return (
@@ -107,7 +109,7 @@ function App() {
           <Offers lang={lang} />
           <Products
             onAddToCart={addToCart}
-            onProductClick={(p) => setSelectedProduct(p)}
+            onProductClick={openProduct}
             lang={lang}
             search={search}
             filter={filter}
@@ -116,19 +118,10 @@ function App() {
 
           {toast && (
             <div style={{
-              position: 'fixed',
-              bottom: '30px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: '#1a1a1a',
-              color: 'var(--gold)',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              border: '1px solid var(--gold)',
-              fontSize: '14px',
-              zIndex: 9999,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-              whiteSpace: 'nowrap'
+              position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)',
+              background: '#1a1a1a', color: 'var(--gold)', padding: '12px 24px',
+              borderRadius: '12px', border: '1px solid var(--gold)', fontSize: '14px',
+              zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', whiteSpace: 'nowrap'
             }}>
               {toast}
             </div>
@@ -138,10 +131,7 @@ function App() {
             open={cartOpen}
             onClose={() => setCartOpen(false)}
             items={cartItems}
-            onCheckout={() => {
-              setCartOpen(false)
-              setCheckoutOpen(true)
-            }}
+            onCheckout={() => { setCartOpen(false); setCheckoutOpen(true) }}
             onRemoveItem={removeFromCart}
             onUpdateQty={updateQty}
             lang={lang}
@@ -150,8 +140,8 @@ function App() {
           {selectedProduct && (
             <ProductPage
               product={selectedProduct}
-              onClose={() => setSelectedProduct(null)}
-              onAddToCart={addToCart}
+              onClose={closeProduct}
+              onAddToCart={(p) => { addToCart(p); closeProduct() }}
               lang={lang}
             />
           )}
