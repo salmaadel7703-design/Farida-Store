@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import Splash from './components/Splash/Splash'
 import Navbar from './components/Navbar/Navbar'
 import Hero from './components/Hero/Hero'
@@ -13,9 +14,10 @@ import Checkout from './components/Checkout/Checkout'
 import Admin from './components/Admin/Admin'
 import TrackOrder from './components/TrackOrder/TrackOrder'
 import MyOrders from './components/MyOrders/MyOrders'
+import CategoryPage from './components/Categories/CategoryPage'
 import './index.css'
 
-function App() {
+function MainApp() {
   const [showSplash, setShowSplash] = useState(true)
   const [cartOpen, setCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState([])
@@ -27,13 +29,13 @@ function App() {
   const [ordersOpen, setOrdersOpen] = useState(false)
   const [lang, setLang] = useState('ar')
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('')
   const [toast, setToast] = useState('')
   const [catImages, setCatImages] = useState(() => {
     const saved = localStorage.getItem('catImages')
     return saved ? JSON.parse(saved) : {}
   })
   const scrollPos = useRef(0)
+  const navigate = useNavigate()
 
   useEffect(() => {
     setTimeout(() => setShowSplash(false), 2500)
@@ -54,7 +56,6 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [selectedProduct])
 
-  // لما الأدمن يعدل صور الأقسام نحدث الـ state
   useEffect(() => {
     const onStorage = () => {
       const saved = localStorage.getItem('catImages')
@@ -113,11 +114,18 @@ function App() {
   }
 
   const handleFilter = (cat) => {
-    setFilter(cat)
-    setTimeout(() => document.querySelector('.products-grid')?.scrollIntoView({ behavior: 'smooth' }), 100)
+    navigate(`/category/${encodeURIComponent(cat)}`)
   }
 
   const user = JSON.parse(localStorage.getItem('user') || 'null')
+
+  const sharedProps = {
+    cartOpen, setCartOpen, cartItems, addToCart, removeFromCart, updateQty,
+    authOpen, setAuthOpen, selectedProduct, openProduct, closeProduct,
+    checkoutOpen, setCheckoutOpen, clearCart, adminOpen, setAdminOpen,
+    trackOpen, setTrackOpen, ordersOpen, setOrdersOpen, lang, setLang,
+    handleSearch, toast, user
+  }
 
   return (
     <div>
@@ -135,17 +143,32 @@ function App() {
             onSearch={handleSearch}
             onFilterClick={handleFilter}
           />
-          <Hero lang={lang} />
-          <Categories lang={lang} onFilterClick={handleFilter} catImages={catImages} />
-          <Offers lang={lang} />
-          <Products
-            onAddToCart={addToCart}
-            onProductClick={openProduct}
-            lang={lang}
-            search={search}
-            filter={filter}
-          />
-          <Footer lang={lang} />
+
+          <Routes>
+            <Route path="/" element={
+              <>
+                <Hero lang={lang} />
+                <Categories lang={lang} onFilterClick={handleFilter} catImages={catImages} />
+                <Offers lang={lang} />
+                <Products
+                  onAddToCart={addToCart}
+                  onProductClick={openProduct}
+                  lang={lang}
+                  search={search}
+                  filter=""
+                />
+                <Footer lang={lang} />
+              </>
+            } />
+            <Route path="/category/:cat" element={
+              <CategoryPage
+                onAddToCart={addToCart}
+                onProductClick={openProduct}
+                lang={lang}
+                onBack={() => navigate('/')}
+              />
+            } />
+          </Routes>
 
           {toast && (
             <div style={{
@@ -190,6 +213,14 @@ function App() {
         </>
       )}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <MainApp />
+    </BrowserRouter>
   )
 }
 
