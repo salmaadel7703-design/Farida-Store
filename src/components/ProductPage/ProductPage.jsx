@@ -18,7 +18,34 @@ function ProductPage({ product, onClose, onAddToCart }) {
     <>
       <div className="overlay" onClick={onClose}></div>
       <div className="product-page" onClick={onClose}>
-        <button className="drawer-close product-page-close" onClick={onClose}>✕</button>
+
+        {/* ✅ زرار رجوع واضح فوق */}
+        <button
+          className="drawer-close product-page-close"
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            right: '1rem',
+            left: 'auto',
+            zIndex: 400,
+            background: 'var(--gold)',
+            color: 'var(--black)',
+            border: 'none',
+            borderRadius: '24px',
+            padding: '8px 16px',
+            fontWeight: '700',
+            fontSize: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'Tajawal, sans-serif'
+          }}
+        >
+          ✕ رجوع
+        </button>
+
         <div className="product-page-inner" onClick={e => e.stopPropagation()}>
           <div className="product-page-img" style={{position:'relative'}}>
             {images.length > 0 ? (
