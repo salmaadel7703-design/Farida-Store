@@ -6,10 +6,7 @@ function ProductPage({ product, onClose, onAddToCart }) {
   const [qty, setQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
 
-  // ✅ الصور المتعددة
   const images = product.images?.length ? product.images : product.image ? [product.image] : []
-
-  // ✅ الألوان والمقاسات
   const colors = product.colors ? product.colors.split(',').map(c => c.trim()).filter(Boolean) : []
   const sizes = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : ['S', 'M', 'L', 'XL', 'XXL']
 
@@ -53,35 +50,21 @@ function ProductPage({ product, onClose, onAddToCart }) {
             </div>
             {product.badge && <div className="product-badge">{product.badge}</div>}
 
-            {/* ✅ الألوان */}
             {colors.length > 0 && (
               <>
                 <div className="product-page-section">اللون</div>
                 <div className="sizes-grid">
                   {colors.map(c => (
-                    <div
-                      key={c}
-                      className={`size-btn ${color === c ? 'active' : ''}`}
-                      onClick={() => setColor(c)}
-                    >
-                      {c}
-                    </div>
+                    <div key={c} className={`size-btn ${color === c ? 'active' : ''}`} onClick={() => setColor(c)}>{c}</div>
                   ))}
                 </div>
               </>
             )}
 
-            {/* ✅ المقاسات */}
             <div className="product-page-section">المقاس</div>
             <div className="sizes-grid">
               {sizes.map(s => (
-                <div
-                  key={s}
-                  className={`size-btn ${size === s ? 'active' : ''}`}
-                  onClick={() => setSize(s)}
-                >
-                  {s}
-                </div>
+                <div key={s} className={`size-btn ${size === s ? 'active' : ''}`} onClick={() => setSize(s)}>{s}</div>
               ))}
             </div>
 
@@ -96,7 +79,7 @@ function ProductPage({ product, onClose, onAddToCart }) {
               onAddToCart({ ...product, size, color, qty })
               onClose()
             }}>
-              أضيفي للكارت
+              أضيفي للسلة
             </button>
           </div>
         </div>

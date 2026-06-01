@@ -6,14 +6,14 @@ function Cart({ open, onClose, items = [], onCheckout, onRemoveItem, onUpdateQty
       {open && <div className="overlay" onClick={onClose}></div>}
       <div className={`cart-panel ${open ? 'open' : ''}`}>
         <div className="cart-head">
-          <span className="cart-head-title">عربة التسوق</span>
+          <span className="cart-head-title">سلة التسوق</span>
           <button className="drawer-close" onClick={onClose}>✕</button>
         </div>
         <div className="cart-items">
           {items.length === 0 ? (
             <div className="cart-empty">
               <div style={{fontSize:'48px', marginBottom:'1rem'}}>🛍</div>
-              <p>عربتك فارغة</p>
+              <p>سلتك فارغة</p>
               <p style={{fontSize:'12px', marginTop:'8px', color:'var(--gray)'}}>أضيفي منتجات لتبدئي التسوق</p>
             </div>
           ) : (
@@ -21,13 +21,11 @@ function Cart({ open, onClose, items = [], onCheckout, onRemoveItem, onUpdateQty
               <div className="cart-item" key={i}>
                 <div style={{flex:1}}>
                   <div className="cart-item-name">{item.name}</div>
-                  {/* ✅ اللون والمقاس */}
                   <div style={{fontSize:'12px', color:'var(--gray)', marginTop:'4px'}}>
                     {item.size && <span>المقاس: {item.size}</span>}
                     {item.size && item.color && <span> · </span>}
                     {item.color && <span>اللون: {item.color}</span>}
                   </div>
-                  {/* ✅ الكمية */}
                   <div style={{display:'flex', alignItems:'center', gap:'8px', marginTop:'8px'}}>
                     <button className="qty-btn" onClick={() => onUpdateQty(i, (item.qty || 1) - 1)}>-</button>
                     <span style={{color:'white', fontSize:'14px'}}>{item.qty || 1}</span>
@@ -36,7 +34,6 @@ function Cart({ open, onClose, items = [], onCheckout, onRemoveItem, onUpdateQty
                 </div>
                 <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'8px'}}>
                   <div className="cart-item-price">{item.price * (item.qty || 1)} ج</div>
-                  {/* ✅ زرار حذف */}
                   <button onClick={() => onRemoveItem(i)} style={{background:'none', border:'none', color:'#ff6b6b', cursor:'pointer', fontSize:'18px'}}>🗑</button>
                 </div>
               </div>
