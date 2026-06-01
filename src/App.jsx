@@ -11,6 +11,7 @@ import Auth from './components/Auth/Auth'
 import ProductPage from './components/ProductPage/ProductPage'
 import Checkout from './components/Checkout/Checkout'
 import Admin from './components/Admin/Admin'
+import TrackOrder from './components/TrackOrder/TrackOrder'
 import './index.css'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [trackOpen, setTrackOpen] = useState(false)
   const [lang, setLang] = useState('ar')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
@@ -36,7 +38,6 @@ function App() {
 
   const addToCart = (product) => {
     setCartItems(prev => {
-      // ✅ لو نفس المنتج بنفس المقاس واللون، زود الكمية
       const existing = prev.findIndex(i => i._id === product._id && i.size === product.size && i.color === product.color)
       if (existing !== -1) {
         const updated = [...prev]
@@ -49,12 +50,10 @@ function App() {
     setTimeout(() => setToast(''), 2000)
   }
 
-  // ✅ حذف منتج من السلة
   const removeFromCart = (index) => {
     setCartItems(prev => prev.filter((_, i) => i !== index))
   }
 
-  // ✅ تحديث كمية منتج
   const updateQty = (index, qty) => {
     if (qty < 1) {
       removeFromCart(index)
@@ -97,6 +96,7 @@ function App() {
             onCartClick={() => setCartOpen(true)}
             onAuthClick={() => setAuthOpen(true)}
             onAdminClick={() => setAdminOpen(true)}
+            onTrackClick={() => setTrackOpen(true)}
             lang={lang}
             setLang={setLang}
             onSearch={handleSearch}
@@ -164,6 +164,7 @@ function App() {
             />
           )}
           {adminOpen && <Admin onClose={() => setAdminOpen(false)} />}
+          {trackOpen && <TrackOrder onClose={() => setTrackOpen(false)} />}
         </>
       )}
     </div>
