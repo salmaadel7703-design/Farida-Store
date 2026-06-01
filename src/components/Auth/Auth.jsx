@@ -10,6 +10,7 @@ function Auth({ onClose, cartItems }) {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'))
   const [orders, setOrders] = useState([])
   const [tab, setTab] = useState('orders')
+  const [copiedId, setCopiedId] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -21,6 +22,12 @@ function Auth({ onClose, cartItems }) {
         .catch(() => setOrders([]))
     }
   }, [user])
+
+  const handleCopy = (code, id) => {
+    navigator.clipboard.writeText(code)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   const handleLogin = async () => {
     setLoading(true)
@@ -65,6 +72,12 @@ function Auth({ onClose, cartItems }) {
     onClose()
   }
 
+  const statusColor = (status) => {
+    if (status === 'تم التوصيل') return '#4caf50'
+    if (status === 'جاري الشحن') return '#ff9800'
+    return 'var(--gold)'
+  }
+
   return (
     <>
       <div className="overlay" onClick={onClose}></div>
@@ -93,16 +106,42 @@ function Auth({ onClose, cartItems }) {
                   </div>
                 ) : (
                   orders.map(o => (
-                    <div className="admin-product-row" key={o._id}>
-                      <div className="admin-product-info">
+                    <div className="admin-product-row" key={o._id} style={{flexDirection:'column', alignItems:'flex-start'}}>
+                      <div className="admin-product-info" style={{width:'100%'}}>
                         <div className="admin-product-name">{o.governorate} · {o.total} ج</div>
                         <div className="admin-product-meta">
                           {o.payMethod === 'cod' ? '🚚 عند الاستلام' : '📱 فودافون كاش'}
                         </div>
-                        <div className="admin-product-meta" style={{color:'var(--gold)'}}>
-                          كود التتبع: {o.trackCode}
+
+                        {/* ✅ كود التتبع مع زرار كوبي */}
+                        <div style={{display:'flex', alignItems:'center', gap:'8px', marginTop:'6px'}}>
+                          <div style={{color:'var(--gold)', fontSize:'13px', fontWeight:'700', letterSpacing:'1px'}}>
+                            {o.trackCode}
+                          </div>
+                          <button
+                            onClick={() => handleCopy(o.trackCode, o._id)}
+                            style={{
+                              background: copiedId === o._id ? '#4caf50' : '#222',
+                              color: copiedId === o._id ? '#fff' : 'var(--gold)',
+                              border: '1px solid var(--gold)',
+                              borderRadius:'6px', padding:'2px 10px',
+                              fontSize:'11px', cursor:'pointer'
+                            }}
+                          >
+                            {copiedId === o._id ? '✓ تم النسخ' : 'نسخ'}
+                          </button>
                         </div>
-                        <div className="admin-product-meta">{o.status}</div>
+
+                        {/* ✅ حالة الطلب */}
+                        <div style={{
+                          display:'inline-block', marginTop:'6px',
+                          padding:'2px 12px', borderRadius:'20px', fontSize:'11px',
+                          background: '#1a1a1a',
+                          color: statusColor(o.status),
+                          border: `1px solid ${statusColor(o.status)}`
+                        }}>
+                          {o.status}
+                        </div>
                       </div>
                     </div>
                   ))
