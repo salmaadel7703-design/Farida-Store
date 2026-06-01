@@ -37,8 +37,21 @@ function App() {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
   }, [lang])
 
+  // ✅ Back button على الموبايل
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedProduct) {
+        setSelectedProduct(null)
+        setTimeout(() => window.scrollTo({ top: scrollPos.current, behavior: 'instant' }), 0)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [selectedProduct])
+
   const openProduct = (p) => {
     scrollPos.current = window.scrollY
+    window.history.pushState({ product: true }, '')
     setSelectedProduct(p)
   }
 
