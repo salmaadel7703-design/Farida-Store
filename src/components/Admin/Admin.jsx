@@ -22,6 +22,16 @@ const statusColor = (status) => {
   return 'var(--gold)'
 }
 
+const ImgThumb = ({ src, onRemove }) => (
+  <div style={{position:'relative'}}>
+    <img src={src} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
+    <button onClick={onRemove} style={{
+      position:'absolute', top:'-6px', right:'-6px', background:'red', color:'white',
+      border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'10px'
+    }}>✕</button>
+  </div>
+)
+
 function Admin({ onClose }) {
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
@@ -44,21 +54,11 @@ function Admin({ onClose }) {
   const [editingGov, setEditingGov] = useState(null)
 
   useEffect(() => {
-    getProducts()
-      .then(data => { setProducts(Array.isArray(data) ? data : []); setLoading(false) })
-      .catch(() => setLoading(false))
-    getOrders()
-      .then(data => setOrders(Array.isArray(data) ? data : []))
-      .catch(() => setOrders([]))
-    getSlides()
-      .then(data => setSlides(Array.isArray(data) ? data : []))
-      .catch(() => setSlides([]))
-    getOffers()
-      .then(data => setOffers(Array.isArray(data) ? data : []))
-      .catch(() => setOffers([]))
-    getCoupons()
-      .then(data => setCoupons(Array.isArray(data) ? data : []))
-      .catch(() => setCoupons([]))
+    getProducts().then(data => { setProducts(Array.isArray(data) ? data : []); setLoading(false) }).catch(() => setLoading(false))
+    getOrders().then(data => setOrders(Array.isArray(data) ? data : [])).catch(() => setOrders([]))
+    getSlides().then(data => setSlides(Array.isArray(data) ? data : [])).catch(() => setSlides([]))
+    getOffers().then(data => setOffers(Array.isArray(data) ? data : [])).catch(() => setOffers([]))
+    getCoupons().then(data => setCoupons(Array.isArray(data) ? data : [])).catch(() => setCoupons([]))
   }, [])
 
   const handleImageUpload = async (e, target = 'product', isEdit = false, isExtra = false) => {
@@ -68,16 +68,16 @@ function Admin({ onClose }) {
     const res = await uploadImage(file)
     if (target === 'product') {
       if (isExtra) {
-        if (isEdit) setEditing({ ...editing, images: [...(editing.images || []), res.url] })
-        else setNewProduct({ ...newProduct, images: [...(newProduct.images || []), res.url] })
+        if (isEdit) setEditing(prev => ({ ...prev, images: [...(prev.images || []), res.url] }))
+        else setNewProduct(prev => ({ ...prev, images: [...(prev.images || []), res.url] }))
       } else {
-        if (isEdit) setEditing({ ...editing, image: res.url })
-        else setNewProduct({ ...newProduct, image: res.url })
+        if (isEdit) setEditing(prev => ({ ...prev, image: res.url }))
+        else setNewProduct(prev => ({ ...prev, image: res.url }))
       }
     } else if (target === 'slide') {
-      setNewSlide({ ...newSlide, image: res.url })
+      setNewSlide(prev => ({ ...prev, image: res.url }))
     } else if (target === 'offer') {
-      setNewOffer({ ...newOffer, image: res.url })
+      setNewOffer(prev => ({ ...prev, image: res.url }))
     }
     setUploading(false)
   }
@@ -105,70 +105,30 @@ function Admin({ onClose }) {
     setShowAdd(false)
   }
 
-  const handleAddSlide = async () => {
-    const slide = await addSlide(newSlide)
-    setSlides([...slides, slide])
-    setNewSlide({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
-  }
+  const handleAddSlide = async () => { const slide = await addSlide(newSlide); setSlides([...slides, slide]); setNewSlide({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' }) }
+  const handleDeleteSlide = async (id) => { await deleteSlide(id); setSlides(slides.filter(s => s._id !== id)) }
+  const handleAddOffer = async () => { const offer = await addOffer(newOffer); setOffers([...offers, offer]); setNewOffer({ title: '', discount: '', sub: '', image: '' }) }
+  const handleDeleteOffer = async (id) => { await deleteOffer(id); setOffers(offers.filter(o => o._id !== id)) }
 
-  const handleDeleteSlide = async (id) => {
-    await deleteSlide(id)
-    setSlides(slides.filter(s => s._id !== id))
-  }
-
-  const handleAddOffer = async () => {
-    const offer = await addOffer(newOffer)
-    setOffers([...offers, offer])
-    setNewOffer({ title: '', discount: '', sub: '', image: '' })
-  }
-
-  const handleDeleteOffer = async (id) => {
-    await deleteOffer(id)
-    setOffers(offers.filter(o => o._id !== id))
-  }
-
-  // ✅ الطلبات
   const handleNextStatus = async (order) => {
     const currentIndex = STATUS_STEPS.indexOf(order.status)
     if (currentIndex === STATUS_STEPS.length - 1) return
-    const nextStatus = STATUS_STEPS[currentIndex + 1]
-    const updated = await updateOrder(order._id, { status: nextStatus })
+    const updated = await updateOrder(order._id, { status: STATUS_STEPS[currentIndex + 1] })
     setOrders(orders.map(o => o._id === updated._id ? updated : o))
   }
 
-  const handleDeleteOrder = async (id) => {
-    await deleteOrder(id)
-    setOrders(orders.filter(o => o._id !== id))
-  }
+  const handleDeleteOrder = async (id) => { await deleteOrder(id); setOrders(orders.filter(o => o._id !== id)) }
 
-  // ✅ الكوبونات
   const handleAddCoupon = async () => {
     if (!newCoupon.code || !newCoupon.discount) return
-    const coupon = await addCoupon({
-      ...newCoupon,
-      code: newCoupon.code.toUpperCase(),
-      discount: Number(newCoupon.discount),
-      maxUses: Number(newCoupon.maxUses),
-    })
+    const coupon = await addCoupon({ ...newCoupon, code: newCoupon.code.toUpperCase(), discount: Number(newCoupon.discount), maxUses: Number(newCoupon.maxUses) })
     setCoupons([coupon, ...coupons])
     setNewCoupon({ code: '', discount: '', type: 'percent', maxUses: 100 })
   }
 
-  const handleDeleteCoupon = async (id) => {
-    await deleteCoupon(id)
-    setCoupons(coupons.filter(c => c._id !== id))
-  }
-
-  const handleToggleCoupon = async (id, active) => {
-    const updated = await toggleCoupon(id, !active)
-    setCoupons(coupons.map(c => c._id === updated._id ? updated : c))
-  }
-
-  const saveGovernorates = (updated) => {
-    setGovernorates(updated)
-    localStorage.setItem('governorates', JSON.stringify(updated))
-    setEditingGov(null)
-  }
+  const handleDeleteCoupon = async (id) => { await deleteCoupon(id); setCoupons(coupons.filter(c => c._id !== id)) }
+  const handleToggleCoupon = async (id, active) => { const updated = await toggleCoupon(id, !active); setCoupons(coupons.map(c => c._id === updated._id ? updated : c)) }
+  const saveGovernorates = (updated) => { setGovernorates(updated); localStorage.setItem('governorates', JSON.stringify(updated)); setEditingGov(null) }
 
   return (
     <>
@@ -202,36 +162,38 @@ function Admin({ onClose }) {
                   <input className="auth-input" placeholder="السعر القديم" value={newProduct.oldPrice} onChange={e => setNewProduct({...newProduct, oldPrice: e.target.value})} />
                 </div>
                 <div className="admin-row">
-                  <input className="auth-input" placeholder="البادج عربي (مثلاً: جديد)" value={newProduct.badge} onChange={e => setNewProduct({...newProduct, badge: e.target.value})} />
-                  <input className="auth-input" placeholder="البادج انجليزي (مثلاً: New)" value={newProduct.badgeEn} onChange={e => setNewProduct({...newProduct, badgeEn: e.target.value})} />
+                  <input className="auth-input" placeholder="البادج عربي" value={newProduct.badge} onChange={e => setNewProduct({...newProduct, badge: e.target.value})} />
+                  <input className="auth-input" placeholder="البادج انجليزي" value={newProduct.badgeEn} onChange={e => setNewProduct({...newProduct, badgeEn: e.target.value})} />
                 </div>
                 <div className="admin-row">
                   <input className="auth-input" placeholder="الكمية" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} />
                   <select className="auth-input" value={newProduct.cat} onChange={e => setNewProduct({...newProduct, cat: e.target.value})}>
-                    <option>بيجامات</option>
-                    <option>كاشات</option>
-                    <option>لانجيري</option>
+                    <option>بيجامات</option><option>كاشات</option><option>لانجيري</option>
                   </select>
                 </div>
-                <input className="auth-input" placeholder="الألوان مفصولة بفاصلة (مثلاً: أحمر, أسود, بيج)" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
-                <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة (مثلاً: S, M, L)" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
+                <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
+                <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
+
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>الصورة الرئيسية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product')} />
-                {newProduct.image && <img src={newProduct.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
+                {newProduct.image && (
+                  <ImgThumb src={newProduct.image} onRemove={() => setNewProduct({...newProduct, image: ''})} />
+                )}
+
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صور إضافية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', false, true)} />
                 <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
                   {newProduct.images?.map((img, i) => (
-                    <img key={i} src={img} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
+                    <ImgThumb key={i} src={img} onRemove={() => setNewProduct({...newProduct, images: newProduct.images.filter((_, j) => j !== i)})} />
                   ))}
                 </div>
+
                 {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                 <button className="auth-btn" onClick={handleAdd} disabled={uploading}>إضافة المنتج</button>
               </div>
             )}
-            {loading ? (
-              <div className="admin-empty">جاري التحميل...</div>
-            ) : (
+
+            {loading ? <div className="admin-empty">جاري التحميل...</div> : (
               <div className="admin-products">
                 {products.map(p => (
                   <div className="admin-product-row" key={p._id}>
@@ -247,19 +209,21 @@ function Admin({ onClose }) {
                         </div>
                         <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={editing.colors || ''} onChange={e => setEditing({...editing, colors: e.target.value})} />
                         <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={editing.sizes || ''} onChange={e => setEditing({...editing, sizes: e.target.value})} />
+
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة الرئيسية</div>
                         <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true)} />
-                        {editing.image && <img src={editing.image} alt="preview" style={{width:'100px', height:'100px', objectFit:'cover', borderRadius:'4px'}} />}
+                        {editing.image && (
+                          <ImgThumb src={editing.image} onRemove={() => setEditing({...editing, image: ''})} />
+                        )}
+
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>إضافة صور إضافية</div>
                         <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true, true)} />
                         <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
                           {editing.images?.map((img, i) => (
-                            <div key={i} style={{position:'relative'}}>
-                              <img src={img} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
-                              <button onClick={() => setEditing({...editing, images: editing.images.filter((_, j) => j !== i)})} style={{position:'absolute', top:'-6px', right:'-6px', background:'red', color:'white', border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'10px'}}>✕</button>
-                            </div>
+                            <ImgThumb key={i} src={img} onRemove={() => setEditing({...editing, images: editing.images.filter((_, j) => j !== i)})} />
                           ))}
                         </div>
+
                         {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                         <div className="admin-row">
                           <button className="auth-btn" style={{flex:1}} onClick={handleSaveEdit}>حفظ</button>
@@ -293,10 +257,7 @@ function Admin({ onClose }) {
         {tab === 'orders' && (
           <div>
             {orders.length === 0 ? (
-              <div className="admin-empty">
-                <div style={{fontSize:'48px', marginBottom:'1rem'}}>📦</div>
-                <p>مفيش طلبات لسه</p>
-              </div>
+              <div className="admin-empty"><div style={{fontSize:'48px', marginBottom:'1rem'}}>📦</div><p>مفيش طلبات لسه</p></div>
             ) : (
               <div className="admin-products">
                 {orders.map(o => (
@@ -304,50 +265,25 @@ function Admin({ onClose }) {
                     <div className="admin-product-info" style={{width:'100%'}}>
                       <div className="admin-product-name">{o.name} — {o.governorate}</div>
                       <div className="admin-product-meta">📱 {o.phone} · {o.total} ج · {o.payMethod === 'cod' ? 'عند الاستلام' : 'فودافون كاش'}</div>
-                      {o.payMethod === 'vodafone' && (
-                        <div className="admin-product-meta" style={{color:'#ff6b6b'}}>محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج</div>
-                      )}
-                      {o.discount > 0 && (
-                        <div className="admin-product-meta" style={{color:'#4caf50'}}>🎫 كوبون: {o.coupon} · خصم: {o.discount} ج</div>
-                      )}
+                      {o.payMethod === 'vodafone' && <div className="admin-product-meta" style={{color:'#ff6b6b'}}>محفظة: {o.vodafonePhone} · دفع: {o.paidAmount} ج</div>}
+                      {o.discount > 0 && <div className="admin-product-meta" style={{color:'#4caf50'}}>🎫 كوبون: {o.coupon} · خصم: {o.discount} ج</div>}
                       <div className="admin-product-meta">كود: <span style={{color:'var(--gold)', fontWeight:'700'}}>{o.trackCode}</span></div>
-
-                      {/* ✅ شريط الحالة */}
                       <div style={{display:'flex', alignItems:'center', gap:'6px', marginTop:'8px', flexWrap:'wrap'}}>
                         {STATUS_STEPS.map((step, i) => (
                           <div key={step} style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                            <div style={{
-                              padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:'600',
-                              background: o.status === step ? statusColor(step) : '#222',
-                              color: o.status === step ? '#000' : '#666',
-                              border: `1px solid ${o.status === step ? statusColor(step) : '#333'}`
-                            }}>
-                              {step}
-                            </div>
+                            <div style={{padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:'600', background: o.status === step ? statusColor(step) : '#222', color: o.status === step ? '#000' : '#666', border: `1px solid ${o.status === step ? statusColor(step) : '#333'}`}}>{step}</div>
                             {i < STATUS_STEPS.length - 1 && <span style={{color:'#444', fontSize:'10px'}}>←</span>}
                           </div>
                         ))}
                       </div>
                     </div>
-
-                    {/* ✅ الأزرار */}
                     <div style={{display:'flex', gap:'8px', width:'100%'}}>
                       {o.status !== 'تم التوصيل' && (
-                        <button
-                          className="admin-edit-btn"
-                          style={{flex:1}}
-                          onClick={() => handleNextStatus(o)}
-                        >
+                        <button className="admin-edit-btn" style={{flex:1}} onClick={() => handleNextStatus(o)}>
                           {o.status === 'جاري التجهيز' ? '← جاري الشحن' : '← تم التوصيل'}
                         </button>
                       )}
-                      <button
-                        className="admin-delete-btn"
-                        style={{flex: o.status === 'تم التوصيل' ? 1 : 0}}
-                        onClick={() => handleDeleteOrder(o._id)}
-                      >
-                        حذف
-                      </button>
+                      <button className="admin-delete-btn" style={{flex: o.status === 'تم التوصيل' ? 1 : 0}} onClick={() => handleDeleteOrder(o._id)}>حذف</button>
                     </div>
                   </div>
                 ))}
@@ -359,7 +295,7 @@ function Admin({ onClose }) {
         {tab === 'slides' && (
           <div>
             <div className="admin-form">
-              <input className="auth-input" placeholder="التاق (مثلاً: ✦ كولكشن جديد ✦)" value={newSlide.tag} onChange={e => setNewSlide({...newSlide, tag: e.target.value})} />
+              <input className="auth-input" placeholder="التاق" value={newSlide.tag} onChange={e => setNewSlide({...newSlide, tag: e.target.value})} />
               <div className="admin-row">
                 <input className="auth-input" placeholder="العنوان" value={newSlide.title} onChange={e => setNewSlide({...newSlide, title: e.target.value})} />
                 <input className="auth-input" placeholder="العنوان الذهبي" value={newSlide.titleGold} onChange={e => setNewSlide({...newSlide, titleGold: e.target.value})} />
@@ -391,7 +327,7 @@ function Admin({ onClose }) {
           <div>
             <div className="admin-form">
               <input className="auth-input" placeholder="عنوان العرض" value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} />
-              <input className="auth-input" placeholder="نسبة الخصم (مثلاً: خصم 50%)" value={newOffer.discount} onChange={e => setNewOffer({...newOffer, discount: e.target.value})} />
+              <input className="auth-input" placeholder="نسبة الخصم" value={newOffer.discount} onChange={e => setNewOffer({...newOffer, discount: e.target.value})} />
               <input className="auth-input" placeholder="الوصف" value={newOffer.sub} onChange={e => setNewOffer({...newOffer, sub: e.target.value})} />
               <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صورة العرض</div>
               <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'offer')} />
@@ -418,7 +354,7 @@ function Admin({ onClose }) {
           <div>
             <div className="admin-form">
               <div className="admin-row">
-                <input className="auth-input" placeholder="كود الكوبون (مثلاً: FARIDA20)" value={newCoupon.code} onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} style={{textTransform:'uppercase'}} />
+                <input className="auth-input" placeholder="كود الكوبون" value={newCoupon.code} onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} style={{textTransform:'uppercase'}} />
                 <input className="auth-input" placeholder="قيمة الخصم" type="number" value={newCoupon.discount} onChange={e => setNewCoupon({...newCoupon, discount: e.target.value})} />
               </div>
               <div className="admin-row">
@@ -432,10 +368,7 @@ function Admin({ onClose }) {
             </div>
             <div className="admin-products">
               {coupons.length === 0 ? (
-                <div className="admin-empty">
-                  <div style={{fontSize:'48px', marginBottom:'1rem'}}>🎫</div>
-                  <p>مفيش كوبونات لسه</p>
-                </div>
+                <div className="admin-empty"><div style={{fontSize:'48px', marginBottom:'1rem'}}>🎫</div><p>مفيش كوبونات لسه</p></div>
               ) : (
                 coupons.map(c => (
                   <div className="admin-product-row" key={c._id}>
@@ -466,16 +399,8 @@ function Admin({ onClose }) {
                 {editingGov === i ? (
                   <div className="admin-form" style={{width:'100%'}}>
                     <div className="admin-row">
-                      <input className="auth-input" placeholder="السعر" type="number" value={g.price} onChange={e => {
-                        const updated = [...governorates]
-                        updated[i] = {...updated[i], price: Number(e.target.value)}
-                        setGovernorates(updated)
-                      }} />
-                      <input className="auth-input" placeholder="الأيام (مثلاً: 2-3)" value={g.days} onChange={e => {
-                        const updated = [...governorates]
-                        updated[i] = {...updated[i], days: e.target.value}
-                        setGovernorates(updated)
-                      }} />
+                      <input className="auth-input" placeholder="السعر" type="number" value={g.price} onChange={e => { const u = [...governorates]; u[i] = {...u[i], price: Number(e.target.value)}; setGovernorates(u) }} />
+                      <input className="auth-input" placeholder="الأيام" value={g.days} onChange={e => { const u = [...governorates]; u[i] = {...u[i], days: e.target.value}; setGovernorates(u) }} />
                     </div>
                     <div className="admin-row">
                       <button className="auth-btn" style={{flex:1}} onClick={() => saveGovernorates(governorates)}>حفظ</button>
