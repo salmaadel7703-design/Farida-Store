@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer, getCoupons, addCoupon, deleteCoupon, toggleCoupon, updateOrder, deleteOrder } from '../../api'
+import { getProducts, addProduct, updateProduct, deleteProduct, getOrders, uploadImage, getSlides, addSlide, deleteSlide, getOffers, addOffer, deleteOffer, getCoupons, addCoupon, deleteCoupon, toggleCoupon, updateOrder, deleteOrder, makeAdmin } from '../../api'
 
 const defaultGovernorates = [
   { name: 'القاهرة', price: 35, days: '2-3' },
@@ -25,10 +25,7 @@ const statusColor = (status) => {
 const ImgThumb = ({ src, onRemove }) => (
   <div style={{position:'relative'}}>
     <img src={src} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
-    <button onClick={onRemove} style={{
-      position:'absolute', top:'-6px', right:'-6px', background:'red', color:'white',
-      border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'10px'
-    }}>✕</button>
+    <button onClick={onRemove} style={{position:'absolute', top:'-6px', right:'-6px', background:'red', color:'white', border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'10px'}}>✕</button>
   </div>
 )
 
@@ -52,6 +49,11 @@ function Admin({ onClose }) {
     return saved ? JSON.parse(saved) : defaultGovernorates
   })
   const [editingGov, setEditingGov] = useState(null)
+
+  // ✅ المشرفين
+  const [adminEmail, setAdminEmail] = useState('')
+  const [adminMsg, setAdminMsg] = useState('')
+  const [adminLoading, setAdminLoading] = useState(false)
 
   useEffect(() => {
     getProducts().then(data => { setProducts(Array.isArray(data) ? data : []); setLoading(false) }).catch(() => setLoading(false))
@@ -82,53 +84,57 @@ function Admin({ onClose }) {
     setUploading(false)
   }
 
-  const handleDelete = async (id) => {
-    await deleteProduct(id)
-    setProducts(products.filter(p => p._id !== id))
-  }
-
+  const handleDelete = async (id) => { await deleteProduct(id); setProducts(products.filter(p => p._id !== id)) }
   const handleSaveEdit = async () => {
     const updated = await updateProduct(editing._id, editing)
     setProducts(products.map(p => p._id === updated._id ? updated : p))
     setEditing(null)
   }
-
   const handleAdd = async () => {
-    const product = await addProduct({
-      ...newProduct,
-      price: Number(newProduct.price),
-      oldPrice: newProduct.oldPrice ? Number(newProduct.oldPrice) : null,
-      stock: Number(newProduct.stock)
-    })
+    const product = await addProduct({ ...newProduct, price: Number(newProduct.price), oldPrice: newProduct.oldPrice ? Number(newProduct.oldPrice) : null, stock: Number(newProduct.stock) })
     setProducts([...products, product])
     setNewProduct({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
     setShowAdd(false)
   }
-
   const handleAddSlide = async () => { const slide = await addSlide(newSlide); setSlides([...slides, slide]); setNewSlide({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' }) }
   const handleDeleteSlide = async (id) => { await deleteSlide(id); setSlides(slides.filter(s => s._id !== id)) }
   const handleAddOffer = async () => { const offer = await addOffer(newOffer); setOffers([...offers, offer]); setNewOffer({ title: '', discount: '', sub: '', image: '' }) }
   const handleDeleteOffer = async (id) => { await deleteOffer(id); setOffers(offers.filter(o => o._id !== id)) }
-
   const handleNextStatus = async (order) => {
     const currentIndex = STATUS_STEPS.indexOf(order.status)
     if (currentIndex === STATUS_STEPS.length - 1) return
     const updated = await updateOrder(order._id, { status: STATUS_STEPS[currentIndex + 1] })
     setOrders(orders.map(o => o._id === updated._id ? updated : o))
   }
-
   const handleDeleteOrder = async (id) => { await deleteOrder(id); setOrders(orders.filter(o => o._id !== id)) }
-
   const handleAddCoupon = async () => {
     if (!newCoupon.code || !newCoupon.discount) return
     const coupon = await addCoupon({ ...newCoupon, code: newCoupon.code.toUpperCase(), discount: Number(newCoupon.discount), maxUses: Number(newCoupon.maxUses) })
     setCoupons([coupon, ...coupons])
     setNewCoupon({ code: '', discount: '', type: 'percent', maxUses: 100 })
   }
-
   const handleDeleteCoupon = async (id) => { await deleteCoupon(id); setCoupons(coupons.filter(c => c._id !== id)) }
   const handleToggleCoupon = async (id, active) => { const updated = await toggleCoupon(id, !active); setCoupons(coupons.map(c => c._id === updated._id ? updated : c)) }
   const saveGovernorates = (updated) => { setGovernorates(updated); localStorage.setItem('governorates', JSON.stringify(updated)); setEditingGov(null) }
+
+  // ✅ جعل مستخدم أدمن
+  const handleMakeAdmin = async () => {
+    if (!adminEmail.trim()) return
+    setAdminLoading(true)
+    setAdminMsg('')
+    try {
+      const res = await makeAdmin(adminEmail.trim())
+      if (res.user) {
+        setAdminMsg(`✅ تم! ${res.user.email} أصبح أدمن`)
+        setAdminEmail('')
+      } else {
+        setAdminMsg('❌ مفيش يوزر بالإيميل ده')
+      }
+    } catch {
+      setAdminMsg('❌ في مشكلة، حاولي تاني')
+    }
+    setAdminLoading(false)
+  }
 
   return (
     <>
@@ -146,6 +152,7 @@ function Admin({ onClose }) {
           <button className={`auth-tab ${tab === 'offers' ? 'active' : ''}`} onClick={() => setTab('offers')}>العروض</button>
           <button className={`auth-tab ${tab === 'shipping' ? 'active' : ''}`} onClick={() => setTab('shipping')}>الشحن</button>
           <button className={`auth-tab ${tab === 'coupons' ? 'active' : ''}`} onClick={() => setTab('coupons')}>🎫 كوبونات</button>
+          <button className={`auth-tab ${tab === 'admins' ? 'active' : ''}`} onClick={() => setTab('admins')}>👥 مشرفين</button>
         </div>
 
         {tab === 'products' && (
@@ -173,13 +180,9 @@ function Admin({ onClose }) {
                 </div>
                 <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
                 <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
-
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>الصورة الرئيسية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product')} />
-                {newProduct.image && (
-                  <ImgThumb src={newProduct.image} onRemove={() => setNewProduct({...newProduct, image: ''})} />
-                )}
-
+                {newProduct.image && <ImgThumb src={newProduct.image} onRemove={() => setNewProduct({...newProduct, image: ''})} />}
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>صور إضافية</div>
                 <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', false, true)} />
                 <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
@@ -187,12 +190,10 @@ function Admin({ onClose }) {
                     <ImgThumb key={i} src={img} onRemove={() => setNewProduct({...newProduct, images: newProduct.images.filter((_, j) => j !== i)})} />
                   ))}
                 </div>
-
                 {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                 <button className="auth-btn" onClick={handleAdd} disabled={uploading}>إضافة المنتج</button>
               </div>
             )}
-
             {loading ? <div className="admin-empty">جاري التحميل...</div> : (
               <div className="admin-products">
                 {products.map(p => (
@@ -209,13 +210,9 @@ function Admin({ onClose }) {
                         </div>
                         <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={editing.colors || ''} onChange={e => setEditing({...editing, colors: e.target.value})} />
                         <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={editing.sizes || ''} onChange={e => setEditing({...editing, sizes: e.target.value})} />
-
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة الرئيسية</div>
                         <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true)} />
-                        {editing.image && (
-                          <ImgThumb src={editing.image} onRemove={() => setEditing({...editing, image: ''})} />
-                        )}
-
+                        {editing.image && <ImgThumb src={editing.image} onRemove={() => setEditing({...editing, image: ''})} />}
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>إضافة صور إضافية</div>
                         <input type="file" accept="image/*" className="auth-input" onChange={e => handleImageUpload(e, 'product', true, true)} />
                         <div style={{display:'flex', gap:'8px', flexWrap:'wrap'}}>
@@ -223,7 +220,6 @@ function Admin({ onClose }) {
                             <ImgThumb key={i} src={img} onRemove={() => setEditing({...editing, images: editing.images.filter((_, j) => j !== i)})} />
                           ))}
                         </div>
-
                         {uploading && <div style={{color:'var(--gold)', fontSize:'12px'}}>جاري رفع الصورة...</div>}
                         <div className="admin-row">
                           <button className="auth-btn" style={{flex:1}} onClick={handleSaveEdit}>حفظ</button>
@@ -389,6 +385,40 @@ function Admin({ onClose }) {
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* ✅ تبويب المشرفين */}
+        {tab === 'admins' && (
+          <div className="admin-form">
+            <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'6px'}}>
+              إضافة مشرف جديد
+            </div>
+            <p style={{color:'#888', fontSize:'12px', marginBottom:'12px'}}>
+              المستخدم لازم يكون عامل حساب الأول، بعدين تكتب إيميله هنا وتديه صلاحية الأدمن
+            </p>
+            <input
+              className="auth-input"
+              type="email"
+              placeholder="إيميل المشرف الجديد"
+              value={adminEmail}
+              onChange={e => { setAdminEmail(e.target.value); setAdminMsg('') }}
+            />
+            <button
+              className="auth-btn"
+              onClick={handleMakeAdmin}
+              disabled={adminLoading || !adminEmail.trim()}
+            >
+              {adminLoading ? 'جاري...' : 'اجعله مشرف'}
+            </button>
+            {adminMsg && (
+              <div style={{
+                marginTop:'8px', fontSize:'13px',
+                color: adminMsg.startsWith('✅') ? '#4caf50' : '#f44336'
+              }}>
+                {adminMsg}
+              </div>
+            )}
           </div>
         )}
 

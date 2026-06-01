@@ -197,3 +197,11 @@ export const toggleCoupon = async (id, active) => {
   })
   return res.json()
 }
+export const makeAdmin = async (email) => {
+  const res = await fetch(`${BASE_URL}/users/make-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  return res.json()
+}
