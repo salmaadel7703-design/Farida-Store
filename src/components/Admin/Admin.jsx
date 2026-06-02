@@ -22,6 +22,12 @@ const statusColor = (status) => {
   return 'var(--gold)'
 }
 
+const subCatOptions = {
+  'بيجامات': ['بنطلون', 'برمودا', 'هوت شورت'],
+  'كاشات': ['طويل', 'قصير'],
+  'لانجيري': [],
+}
+
 const ImgThumb = ({ src, onRemove }) => (
   <div style={{position:'relative'}}>
     <img src={src} alt="" style={{width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px'}} />
@@ -37,7 +43,7 @@ function Admin({ onClose }) {
   const [coupons, setCoupons] = useState([])
   const [tab, setTab] = useState('products')
   const [editing, setEditing] = useState(null)
-  const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
+  const [newProduct, setNewProduct] = useState({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', subCat: '', stock: '', image: '', images: [], colors: '', sizes: '' })
   const [newSlide, setNewSlide] = useState({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' })
   const [newOffer, setNewOffer] = useState({ title: '', discount: '', sub: '', image: '' })
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'percent', maxUses: 100 })
@@ -95,7 +101,7 @@ function Admin({ onClose }) {
   const handleAdd = async () => {
     const product = await addProduct({ ...newProduct, price: Number(newProduct.price), oldPrice: newProduct.oldPrice ? Number(newProduct.oldPrice) : null, stock: Number(newProduct.stock) })
     setProducts([...products, product])
-    setNewProduct({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', stock: '', image: '', images: [], colors: '', sizes: '' })
+    setNewProduct({ name: '', nameEn: '', price: '', oldPrice: '', badge: '', badgeEn: '', cat: 'بيجامات', subCat: '', stock: '', image: '', images: [], colors: '', sizes: '' })
     setShowAdd(false)
   }
   const handleAddSlide = async () => { const slide = await addSlide(newSlide); setSlides([...slides, slide]); setNewSlide({ tag: '', title: '', titleGold: '', sub: '', btn: '', image: '' }) }
@@ -176,10 +182,16 @@ function Admin({ onClose }) {
                 </div>
                 <div className="admin-row">
                   <input className="auth-input" placeholder="الكمية" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} />
-                  <select className="auth-input" value={newProduct.cat} onChange={e => setNewProduct({...newProduct, cat: e.target.value})}>
+                  <select className="auth-input" value={newProduct.cat} onChange={e => setNewProduct({...newProduct, cat: e.target.value, subCat: ''})}>
                     <option>بيجامات</option><option>كاشات</option><option>لانجيري</option>
                   </select>
                 </div>
+                {subCatOptions[newProduct.cat]?.length > 0 && (
+                  <select className="auth-input" value={newProduct.subCat} onChange={e => setNewProduct({...newProduct, subCat: e.target.value})}>
+                    <option value="">-- النوع (اختياري) --</option>
+                    {subCatOptions[newProduct.cat].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                )}
                 <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} />
                 <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={newProduct.sizes} onChange={e => setNewProduct({...newProduct, sizes: e.target.value})} />
                 <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>الصورة الرئيسية</div>
@@ -210,6 +222,12 @@ function Admin({ onClose }) {
                           <input className="auth-input" placeholder="السعر" value={editing.price} onChange={e => setEditing({...editing, price: Number(e.target.value)})} />
                           <input className="auth-input" placeholder="الكمية" value={editing.stock} onChange={e => setEditing({...editing, stock: Number(e.target.value)})} />
                         </div>
+                        {subCatOptions[editing.cat]?.length > 0 && (
+                          <select className="auth-input" value={editing.subCat || ''} onChange={e => setEditing({...editing, subCat: e.target.value})}>
+                            <option value="">-- النوع (اختياري) --</option>
+                            {subCatOptions[editing.cat].map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        )}
                         <input className="auth-input" placeholder="الألوان مفصولة بفاصلة" value={editing.colors || ''} onChange={e => setEditing({...editing, colors: e.target.value})} />
                         <input className="auth-input" placeholder="المقاسات مفصولة بفاصلة" value={editing.sizes || ''} onChange={e => setEditing({...editing, sizes: e.target.value})} />
                         <div style={{color:'var(--gold)', fontSize:'13px', marginBottom:'4px'}}>تغيير الصورة الرئيسية</div>
@@ -234,7 +252,7 @@ function Admin({ onClose }) {
                           {p.image && <img src={p.image} alt={p.name} style={{width:'50px', height:'50px', objectFit:'cover', borderRadius:'4px'}} />}
                           <div>
                             <div className="admin-product-name">{p.name}</div>
-                            <div className="admin-product-meta">{p.cat} · {p.price} ج · كمية: {p.stock}</div>
+                            <div className="admin-product-meta">{p.cat} {p.subCat ? `· ${p.subCat}` : ''} · {p.price} ج · كمية: {p.stock}</div>
                             {p.colors && <div className="admin-product-meta">🎨 {p.colors}</div>}
                             {p.sizes && <div className="admin-product-meta">📐 {p.sizes}</div>}
                           </div>
@@ -424,10 +442,7 @@ function Admin({ onClose }) {
                 {catImages[key] && (
                   <img src={catImages[key]} alt={label} style={{width:'120px', height:'80px', objectFit:'cover', borderRadius:'6px', marginBottom:'8px', display:'block'}} />
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="auth-input"
+                <input type="file" accept="image/*" className="auth-input"
                   onChange={async (e) => {
                     const file = e.target.files[0]
                     if (!file) return
@@ -440,18 +455,14 @@ function Admin({ onClose }) {
                   }}
                 />
                 {catImages[key] && (
-                  <button
-                    className="admin-delete-btn"
-                    style={{marginTop:'6px', fontSize:'11px'}}
+                  <button className="admin-delete-btn" style={{marginTop:'6px', fontSize:'11px'}}
                     onClick={() => {
                       const updated = { ...catImages }
                       delete updated[key]
                       setCatImages(updated)
                       localStorage.setItem('catImages', JSON.stringify(updated))
                     }}
-                  >
-                    حذف الصورة
-                  </button>
+                  >حذف الصورة</button>
                 )}
               </div>
             ))}

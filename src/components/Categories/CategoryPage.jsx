@@ -2,13 +2,20 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getProducts } from '../../api'
 
+const subCatOptions = {
+  'بيجامات': ['بنطلون', 'برمودا', 'هوت شورت'],
+  'كاشات': ['طويل', 'قصير'],
+}
+
 function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
   const { cat } = useParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [subFilter, setSubFilter] = useState('')
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
+    setSubFilter('')
   }, [cat])
 
   useEffect(() => {
@@ -26,6 +33,11 @@ function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
   }, [cat])
 
   const catName = decodeURIComponent(cat)
+  const subs = subCatOptions[catName] || []
+
+  const displayed = subFilter
+    ? products.filter(p => p.subCat === subFilter)
+    : products
 
   return (
     <div className="section">
@@ -43,16 +55,46 @@ function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
         <div className="section-line"></div>
       </div>
 
+      {subs.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+          <button
+            onClick={() => setSubFilter('')}
+            style={{
+              padding: '8px 18px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+              border: '1px solid var(--gold)',
+              background: subFilter === '' ? 'var(--gold)' : 'none',
+              color: subFilter === '' ? '#000' : 'var(--gold)',
+            }}
+          >
+            {lang === 'ar' ? 'الكل' : 'All'}
+          </button>
+          {subs.map(s => (
+            <button
+              key={s}
+              onClick={() => setSubFilter(s)}
+              style={{
+                padding: '8px 18px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                border: '1px solid var(--gold)',
+                background: subFilter === s ? 'var(--gold)' : 'none',
+                color: subFilter === s ? '#000' : 'var(--gold)',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--gold)' }}>جاري التحميل...</div>
-      ) : products.length === 0 ? (
+      ) : displayed.length === 0 ? (
         <div className="cart-empty">
           <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🔍</div>
           <p>{lang === 'ar' ? 'مفيش منتجات' : 'No products found'}</p>
         </div>
       ) : (
         <div className="products-grid">
-          {products.map((p, i) => (
+          {displayed.map((p, i) => (
             <div className="product-card" key={i} onClick={() => onProductClick(p)}>
               <div className="product-img" style={{ position: 'relative' }}>
                 {p.image
