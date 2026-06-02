@@ -205,3 +205,24 @@ export const makeAdmin = async (email) => {
   })
   return res.json()
 }
+// الباندل
+export const getBundles = async () => {
+  const res = await fetch(`${BASE_URL}/bundles`)
+  return res.json()
+}
+
+export const addBundle = async (bundle) => {
+  const res = await fetch(`${BASE_URL}/bundles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bundle)
+  })
+  return res.json()
+}
+
+export const deleteBundle = async (id) => {
+  const res = await fetch(`${BASE_URL}/bundles/${id}`, {
+    method: 'DELETE'
+  })
+  return res.json()
+}
