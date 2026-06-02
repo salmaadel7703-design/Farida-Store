@@ -8,10 +8,15 @@ function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [cat])
+
+  useEffect(() => {
+    setLoading(true)
     getProducts()
       .then(data => {
         const all = Array.isArray(data) ? data : []
-        const filtered = cat === 'عروض'
+        const filtered = cat === '%D8%B9%D8%B1%D9%88%D8%B6' || decodeURIComponent(cat) === 'عروض'
           ? all.filter(p => p.oldPrice && p.oldPrice > p.price)
           : all.filter(p => p.cat === decodeURIComponent(cat))
         setProducts(filtered)

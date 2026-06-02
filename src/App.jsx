@@ -114,18 +114,11 @@ function MainApp() {
   }
 
   const handleFilter = (cat) => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
     navigate(`/category/${encodeURIComponent(cat)}`)
   }
 
   const user = JSON.parse(localStorage.getItem('user') || 'null')
-
-  const sharedProps = {
-    cartOpen, setCartOpen, cartItems, addToCart, removeFromCart, updateQty,
-    authOpen, setAuthOpen, selectedProduct, openProduct, closeProduct,
-    checkoutOpen, setCheckoutOpen, clearCart, adminOpen, setAdminOpen,
-    trackOpen, setTrackOpen, ordersOpen, setOrdersOpen, lang, setLang,
-    handleSearch, toast, user
-  }
 
   return (
     <div>
