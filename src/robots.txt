@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://farida-store.vercel.app/sitemap.xml
