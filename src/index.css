@@ -2,8 +2,19 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
 :root {
   --gold: #C9A84C;
   --gold-light: #E8C97A;
