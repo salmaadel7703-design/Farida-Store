@@ -5,16 +5,18 @@ function ProductPage({ product, onClose, onAddToCart }) {
   const [color, setColor] = useState('')
   const [qty, setQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
+  const [fullScreen, setFullScreen] = useState(false)
   const [zoomed, setZoomed] = useState(false)
   const touchStartX = useRef(null)
+  const lastTap = useRef(0)
 
   const allImages = product.image ? [product.image, ...(product.images || [])] : (product.images || [])
   const images = [...new Set(allImages)]
   const colors = product.colors ? product.colors.split(',').map(c => c.trim()).filter(Boolean) : []
   const sizes = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : ['S', 'M', 'L', 'XL', 'XXL']
 
-  const prevImg = () => setActiveImg(i => (i === 0 ? images.length - 1 : i - 1))
-  const nextImg = () => setActiveImg(i => (i === images.length - 1 ? 0 : i + 1))
+  const prevImg = () => { setActiveImg(i => (i === 0 ? images.length - 1 : i - 1)); setZoomed(false) }
+  const nextImg = () => { setActiveImg(i => (i === images.length - 1 ? 0 : i + 1)); setZoomed(false) }
 
   const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
   const handleTouchEnd = (e) => {
@@ -24,13 +26,57 @@ function ProductPage({ product, onClose, onAddToCart }) {
     touchStartX.current = null
   }
 
+  const handleImgTap = () => {
+    const now = Date.now()
+    if (now - lastTap.current < 300) {
+      setZoomed(z => !z)
+    } else {
+      setFullScreen(true)
+    }
+    lastTap.current = now
+  }
+
   return (
     <>
       <div className="overlay" onClick={onClose}></div>
-      <div className="product-page" onClick={onClose}>
 
+      {/* فول سكرين للصورة */}
+      {fullScreen && (
+        <div
+          onClick={() => { setFullScreen(false); setZoomed(false) }}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)',
+            zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: zoomed ? 'auto' : 'hidden'
+          }}
+        >
+          <img
+            src={images[activeImg]}
+            alt={product.name}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onDoubleClick={() => setZoomed(z => !z)}
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: zoomed ? '250%' : '100%',
+              height: zoomed ? 'auto' : 'auto',
+              maxHeight: zoomed ? 'none' : '100vh',
+              objectFit: 'contain',
+              transition: 'all 0.3s',
+              cursor: zoomed ? 'zoom-out' : 'zoom-in'
+            }}
+          />
+          <button onClick={() => { setFullScreen(false); setZoomed(false) }} style={{
+            position: 'fixed', top: '1rem', right: '1rem',
+            background: 'var(--gold)', color: 'var(--black)', border: 'none',
+            borderRadius: '24px', padding: '8px 16px', fontWeight: '700',
+            fontSize: '14px', cursor: 'pointer', zIndex: 501, fontFamily: 'Tajawal, sans-serif'
+          }}>✕ إغلاق</button>
+        </div>
+      )}
+
+      <div className="product-page" onClick={onClose}>
         <button
-          className="drawer-close product-page-close"
           onClick={onClose}
           style={{
             position: 'fixed', top: '1rem', right: '1rem', left: 'auto', zIndex: 400,
@@ -39,58 +85,46 @@ function ProductPage({ product, onClose, onAddToCart }) {
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
             fontFamily: 'Tajawal, sans-serif'
           }}
-        >
-          ✕ رجوع
-        </button>
+        >✕ رجوع</button>
 
         <div className="product-page-inner" onClick={e => e.stopPropagation()}>
-          <div className="product-page-img" style={{position:'relative'}}>
+          <div className="product-page-img" style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             {images.length > 0 ? (
               <>
-                {/* الصورة الرئيسية مع swipe وزوم */}
                 <div
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
-                  onClick={() => setZoomed(!zoomed)}
+                  onClick={handleImgTap}
                   style={{
-                    width: '100%', height: zoomed ? 'auto' : '100%',
-                    overflow: zoomed ? 'auto' : 'hidden',
-                    cursor: zoomed ? 'zoom-out' : 'zoom-in',
+                    width: '100%', flex: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    minHeight: '300px',
+                    cursor: 'pointer', minHeight: '300px', overflow: 'hidden'
                   }}
                 >
                   <img
                     src={images[activeImg]}
                     alt={product.name}
-                    style={{
-                      width: zoomed ? '200%' : '100%',
-                      height: zoomed ? 'auto' : '100%',
-                      objectFit: zoomed ? 'contain' : 'cover',
-                      transition: 'all 0.3s',
-                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </div>
 
-                {/* النقاط */}
                 {images.length > 1 && (
-                  <div style={{position:'absolute', bottom:'70px', left:'50%', transform:'translateX(-50%)', display:'flex', gap:'6px', zIndex:5}}>
+                  <div style={{ position: 'absolute', bottom: '70px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 5 }}>
                     {images.map((_, i) => (
                       <div key={i} onClick={() => setActiveImg(i)} style={{
-                        width:'8px', height:'8px', borderRadius:'50%', cursor:'pointer',
+                        width: '8px', height: '8px', borderRadius: '50%', cursor: 'pointer',
                         background: i === activeImg ? 'var(--gold)' : 'rgba(255,255,255,0.5)'
                       }} />
                     ))}
                   </div>
                 )}
 
-                {/* التامبنيلز */}
                 {images.length > 1 && (
-                  <div style={{display:'flex', gap:'8px', padding:'8px', overflowX:'auto'}}>
+                  <div style={{ display: 'flex', gap: '8px', padding: '8px', overflowX: 'auto' }}>
                     {images.map((img, i) => (
                       <img key={i} src={img} alt="" onClick={() => setActiveImg(i)} style={{
-                        width:'60px', height:'60px', objectFit:'cover', borderRadius:'4px',
-                        cursor:'pointer', border: activeImg === i ? '2px solid var(--gold)' : '2px solid transparent',
+                        width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px',
+                        cursor: 'pointer', border: activeImg === i ? '2px solid var(--gold)' : '2px solid transparent',
                         flexShrink: 0
                       }} />
                     ))}
@@ -98,7 +132,7 @@ function ProductPage({ product, onClose, onAddToCart }) {
                 )}
               </>
             ) : (
-              <span style={{fontSize:'100px', opacity:'0.3'}}>👘</span>
+              <span style={{ fontSize: '100px', opacity: '0.3' }}>👘</span>
             )}
           </div>
 
@@ -135,7 +169,7 @@ function ProductPage({ product, onClose, onAddToCart }) {
               <button className="qty-btn" onClick={() => setQty(q => q + 1)}>+</button>
             </div>
 
-            <button className="auth-btn" style={{marginTop:'1.5rem'}} onClick={() => {
+            <button className="auth-btn" style={{ marginTop: '1.5rem' }} onClick={() => {
               onAddToCart({ ...product, size, color, qty })
               onClose()
             }}>
