@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { getProducts } from '../../api'
 
 const subCatOptions = {
@@ -9,14 +9,17 @@ const subCatOptions = {
 
 function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
   const { cat } = useParams()
+  const location = useLocation()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [subFilter, setSubFilter] = useState('')
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
-    setSubFilter('')
-  }, [cat])
+    const params = new URLSearchParams(location.search)
+    const sub = params.get('sub')
+    setSubFilter(sub ? decodeURIComponent(sub) : '')
+  }, [cat, location.search])
 
   useEffect(() => {
     setLoading(true)
@@ -51,7 +54,7 @@ function CategoryPage({ onAddToCart, onProductClick, lang, onBack }) {
       </div>
 
       <div className="section-head">
-        <div className="section-title">✦ {catName} ✦</div>
+        <div className="section-title">✦ {catName} {subFilter ? `· ${subFilter}` : ''} ✦</div>
         <div className="section-line"></div>
       </div>
 

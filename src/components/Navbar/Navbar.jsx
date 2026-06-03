@@ -1,19 +1,26 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClick, onOrdersClick, lang, setLang, onSearch, onFilterClick }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const navigate = useNavigate()
 
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const isAdmin = user?.role === 'admin'
 
-  const handleFilter = (cat) => {
-    onFilterClick(cat)
+  const handleFilter = (cat, subCat = '') => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    if (subCat) {
+      navigate(`/category/${encodeURIComponent(cat)}?sub=${encodeURIComponent(subCat)}`)
+    } else {
+      navigate(`/category/${encodeURIComponent(cat)}`)
+    }
     setDrawerOpen(false)
   }
 
   const goHome = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    navigate('/')
     setDrawerOpen(false)
   }
 
@@ -22,7 +29,7 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClic
       <nav className="navbar">
         <div className="nav-inner">
           <button className="menu-btn" onClick={() => setDrawerOpen(true)}>☰</button>
-          <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <div className="nav-logo" onClick={goHome}>
             {lang === 'ar' ? 'فريدة' : 'Farida'}
             <span>WOMEN'S WEAR</span>
           </div>
@@ -61,14 +68,14 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClic
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'بيجامات' : 'Pajamas'}</div>
-          <div className="cat-item" onClick={() => handleFilter('بيجامات')}>{lang === 'ar' ? 'بيجامات بنطلون' : 'Long Pajamas'}</div>
-          <div className="cat-item" onClick={() => handleFilter('بيجامات')}>{lang === 'ar' ? 'بيجامات برمودا' : 'Bermuda Pajamas'}</div>
-          <div className="cat-item" onClick={() => handleFilter('بيجامات')}>{lang === 'ar' ? 'بيجامات هوت شورت' : 'Hot Short Pajamas'}</div>
+          <div className="cat-item" onClick={() => handleFilter('بيجامات', 'بنطلون')}>{lang === 'ar' ? 'بيجامات بنطلون' : 'Long Pajamas'}</div>
+          <div className="cat-item" onClick={() => handleFilter('بيجامات', 'برمودا')}>{lang === 'ar' ? 'بيجامات برمودا' : 'Bermuda Pajamas'}</div>
+          <div className="cat-item" onClick={() => handleFilter('بيجامات', 'هوت شورت')}>{lang === 'ar' ? 'بيجامات هوت شورت' : 'Hot Short Pajamas'}</div>
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'كاشات' : 'Caftans'}</div>
-          <div className="cat-item" onClick={() => handleFilter('كاشات')}>{lang === 'ar' ? 'كاش طويل' : 'Long Caftan'}</div>
-          <div className="cat-item" onClick={() => handleFilter('كاشات')}>{lang === 'ar' ? 'كاش قصير' : 'Short Caftan'}</div>
+          <div className="cat-item" onClick={() => handleFilter('كاشات', 'طويل')}>{lang === 'ar' ? 'كاش طويل' : 'Long Caftan'}</div>
+          <div className="cat-item" onClick={() => handleFilter('كاشات', 'قصير')}>{lang === 'ar' ? 'كاش قصير' : 'Short Caftan'}</div>
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'لانجيري' : 'Lingerie'}</div>
@@ -76,7 +83,7 @@ function Navbar({ cartCount, onCartClick, onAuthClick, onAdminClick, onTrackClic
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'عروض' : 'Offers'}</div>
-          <div className="cat-item" onClick={() => { document.querySelector('.offers-banner')?.scrollIntoView({ behavior: 'smooth' }); setDrawerOpen(false) }}>{lang === 'ar' ? 'العروض الحالية' : 'Current Offers'}</div>
+          <div className="cat-item" onClick={() => handleFilter('عروض')}>{lang === 'ar' ? 'العروض الحالية' : 'Current Offers'}</div>
         </div>
         <div className="drawer-category">
           <div className="cat-title">{lang === 'ar' ? 'حسابي' : 'My Account'}</div>
