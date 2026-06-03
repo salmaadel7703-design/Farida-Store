@@ -13,7 +13,7 @@
     <meta name="author" content="فريدة" />
     <meta name="robots" content="index, follow" />
 
-    <!-- Open Graph (لما حد يشارك الرابط على فيسبوك أو واتساب) -->
+    <!-- Open Graph -->
     <meta property="og:title" content="فريدة | ملابس نسائية" />
     <meta property="og:description" content="تسوقي أحدث تشكيلات البيجامات والكاشات واللانجيري" />
     <meta property="og:type" content="website" />
@@ -25,5 +25,9 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      document.addEventListener('selectstart', e => e.preventDefault())
+      document.addEventListener('contextmenu', e => e.preventDefault())
+    </script>
   </body>
 </html>
