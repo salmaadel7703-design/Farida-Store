@@ -827,6 +827,10 @@ body {
   min-height: 400px;
 }
 
+.product-page-img img {
+  object-fit: contain !important;
+}
+
 .product-page-info {
   padding: 2rem;
   display: flex;
