@@ -1350,7 +1350,7 @@ select.auth-input option {
   }
 
   .product-page {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .product-page-img {
@@ -1538,4 +1538,8 @@ select.auth-input option {
     border: none;
     z-index: 400;
   }
+}
+.product-page-inner {
+  user-select: none;
+  -webkit-user-select: none;
 }
