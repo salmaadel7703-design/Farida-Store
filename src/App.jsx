@@ -65,6 +65,17 @@ function MainApp() {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
+  // ✅ منع القائمة الأزرق
+  useEffect(() => {
+    const prevent = (e) => e.preventDefault()
+    document.addEventListener('contextmenu', prevent)
+    document.addEventListener('dragstart', prevent)
+    return () => {
+      document.removeEventListener('contextmenu', prevent)
+      document.removeEventListener('dragstart', prevent)
+    }
+  }, [])
+
   const openProduct = (p) => {
     scrollPos.current = window.scrollY
     window.history.pushState({ product: true }, '')
