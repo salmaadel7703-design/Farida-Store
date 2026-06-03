@@ -36,11 +36,16 @@ function ProductPage({ product, onClose, onAddToCart }) {
     lastTap.current = now
   }
 
+  const imgStyle = (url, isActive) => ({
+    width: '60px', height: '60px', borderRadius: '4px', cursor: 'pointer', flexShrink: 0,
+    backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center',
+    border: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+  })
+
   return (
     <>
       <div className="overlay" onClick={onClose}></div>
 
-      {/* فول سكرين للصورة */}
       {fullScreen && (
         <div
           onClick={() => { setFullScreen(false); setZoomed(false) }}
@@ -50,20 +55,20 @@ function ProductPage({ product, onClose, onAddToCart }) {
             overflow: zoomed ? 'auto' : 'hidden'
           }}
         >
-          <img
-            src={images[activeImg]}
-            alt={product.name}
+          <div
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onDoubleClick={() => setZoomed(z => !z)}
             onClick={e => e.stopPropagation()}
             style={{
               width: zoomed ? '250%' : '100%',
-              height: zoomed ? 'auto' : 'auto',
-              maxHeight: zoomed ? 'none' : '100vh',
-              objectFit: 'contain',
+              minHeight: '100vh',
+              backgroundImage: `url(${images[activeImg]})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              cursor: zoomed ? 'zoom-out' : 'zoom-in',
               transition: 'all 0.3s',
-              cursor: zoomed ? 'zoom-out' : 'zoom-in'
             }}
           />
           <button onClick={() => { setFullScreen(false); setZoomed(false) }} style={{
@@ -91,22 +96,20 @@ function ProductPage({ product, onClose, onAddToCart }) {
           <div className="product-page-img" style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             {images.length > 0 ? (
               <>
+                {/* الصورة الرئيسية كـ background */}
                 <div
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
                   onClick={handleImgTap}
                   style={{
-                    width: '100%', flex: 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', minHeight: '300px', overflow: 'hidden'
+                    width: '100%', flex: 1, minHeight: '300px',
+                    backgroundImage: `url(${images[activeImg]})`,
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    cursor: 'pointer',
                   }}
-                >
-                  <img
-                    src={images[activeImg]}
-                    alt={product.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
+                />
 
                 {images.length > 1 && (
                   <div style={{ position: 'absolute', bottom: '70px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 5 }}>
@@ -122,11 +125,7 @@ function ProductPage({ product, onClose, onAddToCart }) {
                 {images.length > 1 && (
                   <div style={{ display: 'flex', gap: '8px', padding: '8px', overflowX: 'auto' }}>
                     {images.map((img, i) => (
-                      <img key={i} src={img} alt="" onClick={() => setActiveImg(i)} style={{
-                        width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px',
-                        cursor: 'pointer', border: activeImg === i ? '2px solid var(--gold)' : '2px solid transparent',
-                        flexShrink: 0
-                      }} />
+                      <div key={i} onClick={() => setActiveImg(i)} style={imgStyle(img, activeImg === i)} />
                     ))}
                   </div>
                 )}
