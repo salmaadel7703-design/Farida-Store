@@ -840,6 +840,7 @@ body {
 
 .product-page-img img {
   object-fit: contain !important;
+  -webkit-touch-callout: none;
 }
 
 .product-page-info {
@@ -1562,4 +1563,8 @@ select.auth-input option {
 input, textarea {
   -webkit-user-select: text;
   user-select: text;
+}
+img {
+  -webkit-touch-callout: none;
+  pointer-events: none;
 }
